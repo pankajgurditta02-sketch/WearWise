@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WearWise AI | Luxury AI Styling</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="{{ url_for('index') }}" class="logo" style="display: flex; align-items: center;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="WearWise AI" class="animated-logo">
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Experience</a>
+            {% if session.get('analysis') %}
+                <a href="{{ url_for('result') }}">Analytics</a>
+                <a href="{{ url_for('recommendations') }}">Collection</a>
+            {% endif %}
+            {% if session.get('admin') %}
+                <a href="{{ url_for('admin') }}">Dashboard</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Admin</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- AI Loading Screen Overlay -->
+    <div id="loadingScreen">
+        <h2 style="color: var(--accent-gold); margin-bottom: 2rem; letter-spacing: 3px;">INITIALIZING AI VISION</h2>
+        <div class="scanner-box">
+            <!-- Silhouette placeholder -->
+            <div style="width: 100%; height: 100%; background: rgba(255,255,255,0.05); display: flex; align-items:center; justify-content:center;">
+                <i class="fas fa-user" style="font-size: 8rem; color: rgba(255,255,255,0.1);"></i>
+            </div>
+            <div class="scanner-line"></div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem; letter-spacing: 1px;">Extracting Keypoints & Ratios...</p>
+    </div>
+
+    <!-- Floating Chatbot Bubble -->
+    <div class="chatbot-bubble" id="chatbotBubble">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+
+    <!-- Chatbot Window -->
+    <div class="chatbot-window glass" id="chatbotWindow">
+        <div style="padding: 1rem; border-bottom: 1px solid var(--glass-border); text-align: center; font-family: 'Playfair Display', serif; color: var(--accent-gold);">
+            Virtual Stylist
+        </div>
+        <div class="chat-body" id="chatBody">
+            <div class="chat-msg bot">Welcome to WearWise. How can I assist with your styling today?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Ask about fits, colors...">
+            <button id="chatBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

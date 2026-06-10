@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard" style="padding-top: 8rem;">
+    <div style="text-align: center; margin-bottom: 4rem;" class="reveal">
+        <h1 style="font-size: 3rem;">Command Center</h1>
+        <p style="color: var(--text-muted);">Platform Analytics & Inventory Management</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" style="background: transparent; padding: 0 0 4rem 0; margin-bottom: 4rem; border-bottom: 1px solid var(--glass-border);">
+        <div class="stat-item reveal">
+            <h3 class="count-up" data-target="{{ stats.total_users }}">0</h3>
+            <p>Admin Users</p>
+        </div>
+        <div class="stat-item reveal" style="transition-delay: 0.1s;">
+            <h3 class="count-up" data-target="{{ stats.total_uploads }}">0</h3>
+            <p>Total Scans</p>
+        </div>
+        <div class="stat-item reveal" style="transition-delay: 0.2s;">
+            <h3 style="font-size: 2.5rem;">{{ stats.top_size }}</h3>
+            <p>Dominant Size</p>
+        </div>
+        <div class="stat-item reveal" style="transition-delay: 0.3s;">
+            <h3 style="font-size: 2.5rem;">{{ stats.top_body }}</h3>
+            <p>Dominant Body Type</p>
+        </div>
+    </div>
+
+    <div class="dash-grid">
+        <!-- Add Product Form -->
+        <div class="glass reveal" style="padding: 3rem;">
+            <h2 style="color: var(--accent-gold); margin-bottom: 2rem;">Add Inventory</h2>
+            <form action="{{ url_for('add_product') }}" method="post">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label>Product Name</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>SKU Code</label>
+                        <input type="text" name="code" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input type="text" name="category" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label>Description</label>
+                    <input type="text" name="description" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Gender</label>
+                        <select name="gender" class="form-control">
+                            <option value="Men">Men</option>
+                            <option value="Women">Women</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Suggested Fit</label>
+                        <input type="text" name="suggested_fit" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 2rem;">
+                    <label>Body Type Suitability (e.g., Slim, Regular)</label>
+                    <input type="text" name="body_type_suitability" class="form-control" required>
+                </div>
+                
+                <button type="submit" class="btn-gold" style="width: 100%;">Add to Collection</button>
+            </form>
+        </div>
+
+        <!-- Product List & Charts -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+            
+            <div class="glass reveal" style="padding: 2rem;">
+                <h2 style="color: var(--text-main); margin-bottom: 1.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">Platform Demographics</h2>
+                <canvas id="analyticsChart" height="100"></canvas>
+            </div>
+
+            <div class="glass reveal" style="padding: 2rem; overflow-x: auto;">
+                <h2 style="color: var(--text-main); margin-bottom: 1.5rem; font-size: 1.2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">Inventory Management</h2>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Name</th>
+                            <th>Gender</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                        <tr>
+                            <td>{{ p.code }}</td>
+                            <td>{{ p.name }}</td>
+                            <td>{{ p.gender }}</td>
+                            <td>
+                                <a href="{{ url_for('delete_product', id=p.id) }}" style="color: #ff4444; text-decoration: none;"><i class="fas fa-trash"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Chart.js with dark luxury theme
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('analyticsChart').getContext('2d');
+        
+        // Gradient for bars
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, '#D4AF37');
+        gradient.addColorStop(1, 'rgba(212, 175, 55, 0.1)');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Men', 'Women', 'Slim', 'Regular', 'Athletic', 'Plus Size'],
+                datasets: [{
+                    label: 'Scan Demographics (Mock Data)',
+                    data: [1200, 1900, 800, 1500, 600, 200],
+                    backgroundColor: gradient,
+                    borderRadius: 4,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#B0B0B0' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#B0B0B0' }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

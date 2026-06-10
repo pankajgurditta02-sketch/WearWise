@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="padding: 8rem 5% 4rem; max-width: 1400px; margin: 0 auto;">
+    <div style="text-align: center; margin-bottom: 5rem;" class="reveal">
+        <h1 style="font-size: 3rem;">The Collection</h1>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Curated selections based on your {{ session['analysis']['body_type'] }} body architecture and size {{ session['analysis']['predicted_size'] }} dimensions.</p>
+    </div>
+
+
+
+    <!-- Recommended Products from Database -->
+    <h2 style="margin: 5rem 0 2rem; font-size: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;" class="reveal">Shop Recommended Fits</h2>
+    
+    {% if products %}
+    <div class="premium-product-grid">
+        {% for p in products %}
+        <div class="premium-card reveal" style="transition-delay: {{ loop.index0 * 0.1 }}s;">
+            <div class="card-image-wrapper">
+                <img src="{{ url_for('static', filename='products/' ~ p.image) }}" alt="{{ p.name }}" onerror="this.src='https://source.unsplash.com/random/400x600/?suit,luxury'">
+                <div class="match-badge">{{ p.match_score }}% Match</div>
+                <div class="style-badge">{{ p.style }}</div>
+            </div>
+            <div class="card-content">
+                <div class="card-header">
+                    <h3>{{ p.name }}</h3>
+                    <span class="price-badge">₹{{ p.price }}</span>
+                </div>
+                <p class="card-category">{{ p.category }}</p>
+                <div class="card-footer">
+                    <span class="size-indicator">Size: {{ p.size }}</span>
+                    <button class="btn-outline btn-sm">View Details</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass" style="padding: 4rem; text-align: center;">
+        <p style="color: var(--text-muted); font-size: 1.2rem;">Our inventory is currently updating. Please check back later for specific product matches.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
