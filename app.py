@@ -4,10 +4,13 @@ import sqlite3
 from werkzeug.utils import secure_filename
 import pandas as pd
 from models.body_analysis import analyze_body
+from database import init_db
 import pdfkit
 
 app = Flask(__name__)
 app.secret_key = 'wearwise_super_secret_key'
+
+init_db()
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -48,11 +51,14 @@ def upload():
         body_type = analysis['body_type_detection']['type']
         predicted_size = analysis['size_prediction']['size']
         
-        conn = get_db_connection()
-        conn.execute('INSERT INTO uploads (predicted_size, body_type, gender) VALUES (?, ?, ?)',
-                     (predicted_size, body_type, gender))
-        conn.commit()
-        conn.close()
+        try:
+            conn = get_db_connection()
+            conn.execute('INSERT INTO uploads (predicted_size, body_type, gender) VALUES (?, ?, ?)',
+                         (predicted_size, body_type, gender))
+            conn.commit()
+            conn.close()
+        except Exception as db_err:
+            app.logger.error(f"Failed to log upload analytics: {db_err}")
         
         # Store in session for result page
         session['analysis'] = analysis
