@@ -1,6 +1,6 @@
 Flask==3.0.0
 opencv-python==4.12.0.88
-mediapipe==0.10.14
+mediapipe==0.10.21
 numpy==2.1.0
 pandas==2.2.3
 pdfkit==1.0.0
