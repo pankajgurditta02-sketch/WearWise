@@ -1,0 +1,39 @@
+# Version control
+.git
+.gitignore
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+models/__pycache__/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Development / IDE
+.env
+.env.*
+*.env
+.vscode/
+.idea/
+
+# Uploaded user files (populated at runtime)
+static/uploads/
+
+# Database (populated at runtime)
+database.db
+
+# Docs and reports
+*.pdf
+README.md
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Railpack (not needed inside Docker)
+railpack.toml
