@@ -33,8 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewContainer = document.getElementById('preview-container');
 
     if (dropZone && fileInput) {
-        dropZone.addEventListener('click', () => fileInput.click());
-        
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('dragover');
@@ -65,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 imagePreview.src = e.target.result;
-                previewContainer.style.display = 'block';
+                previewContainer.style.display = 'flex';
                 dropZone.querySelector('i').className = 'fas fa-check-circle';
                 dropZone.querySelector('p').innerText = 'Image Selected: ' + file.name;
             };
@@ -79,6 +77,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (uploadForm && loadingScreen) {
         uploadForm.addEventListener('submit', (e) => {
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                e.preventDefault();
+                alert('Please select or drop an image first.');
+                return;
+            }
             // Show loading screen before actually submitting
             loadingScreen.style.display = 'flex';
         });

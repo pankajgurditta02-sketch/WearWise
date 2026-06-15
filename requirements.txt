@@ -3,5 +3,5 @@ opencv-python-headless==4.8.1.78
 mediapipe
 numpy==1.26.2
 pandas==2.2.2
-pdfkit==1.0.0
+xhtml2pdf==0.2.11
 gunicorn

@@ -1,20 +1,25 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="upload-section glass-panel" style="margin-top: 4rem;">
-    <h2>Admin Login</h2>
-    <p style="color: var(--text-muted); margin-bottom: 2rem;">Default: admin / admin</p>
-    
-    <form action="{{ url_for('login') }}" method="post">
-        <div class="form-group">
-            <label>Username</label>
-            <input type="text" name="username" class="form-control" required>
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" name="password" class="form-control" required>
-        </div>
-        <button type="submit" class="btn" style="width: 100%;">Login</button>
-    </form>
+<div class="dashboard" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding-top: 12rem;">
+    <div class="dash-card glass reveal" style="width: 100%; max-width: 480px; text-align: center; padding: 4rem 3rem; background: rgba(20, 20, 20, 0.7);">
+        <i class="fas fa-fingerprint" style="font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 1.5rem; opacity: 0.8;"></i>
+        <h2 style="font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 2.2rem; color: var(--text-main); margin-bottom: 0.5rem;">Admin Access</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 3rem; letter-spacing: 1px; text-transform: uppercase;">Secure Portal (admin/admin)</p>
+        
+        <form action="{{ url_for('login') }}" method="post" style="text-align: left;">
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; font-weight: 500;">Username</label>
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required style="background: rgba(10,10,10,0.6); padding: 1.2rem; font-size: 1rem;">
+            </div>
+            <div class="form-group" style="margin-bottom: 2.5rem;">
+                <label style="display: block; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; font-weight: 500;">Password</label>
+                <input type="password" name="password" class="form-control" placeholder="••••••••" required style="background: rgba(10,10,10,0.6); padding: 1.2rem; font-size: 1rem; letter-spacing: 3px;">
+            </div>
+            <button type="submit" class="btn-gold" style="width: 100%; padding: 1.2rem; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <i class="fas fa-lock"></i> Authenticate
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}

@@ -4,7 +4,8 @@ import sqlite3
 from werkzeug.utils import secure_filename
 import pandas as pd
 from models.body_analysis import analyze_body
-import pdfkit
+from xhtml2pdf import pisa
+from io import BytesIO
 
 app = Flask(__name__)
 app.secret_key = 'wearwise_super_secret_key'
@@ -18,6 +19,44 @@ def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def get_current_analysis():
+    if 'image_path' not in session:
+        return None
+    image_path = session['image_path']
+    filepath = os.path.join(app.root_path, 'static', image_path)
+    gender = session.get('gender', 'Women')
+    skin_tone = session.get('skin_tone', 'Medium')
+    
+    # Calculate deterministically
+    analysis = analyze_body(filepath, gender, skin_tone)
+    if analysis and "error" not in analysis:
+        analysis['body_type'] = analysis['body_type_detection']['type']
+        analysis['predicted_size'] = analysis['size_prediction']['size']
+        analysis['skin_tone'] = skin_tone
+        return analysis
+    return None
+
+class FakeSession(dict):
+    def get(self, key, default=None):
+        if key == 'analysis':
+            return get_current_analysis()
+        return super().get(key, default)
+    
+    def __getitem__(self, key):
+        if key == 'analysis':
+            analysis = get_current_analysis()
+            if analysis is None:
+                raise KeyError('analysis')
+            return analysis
+        return super().__getitem__(key)
+
+@app.context_processor
+def inject_session():
+    if 'image_path' in session:
+        return dict(session=FakeSession(session))
+    return dict(session=session)
+
 
 @app.route('/')
 def index():
@@ -54,61 +93,42 @@ def upload():
         conn.commit()
         conn.close()
         
-        # Store in session for result page
-        session['analysis'] = analysis
+        # Store only metadata in session to stay within 4KB cookie limits
         session['image_path'] = f'uploads/{filename}'
         session['gender'] = gender
+        session['skin_tone'] = skin_tone
         
         return redirect(url_for('result'))
 
 @app.route('/result')
 def result():
-    if 'analysis' not in session:
+    if 'image_path' not in session:
         return redirect(url_for('index'))
     return render_template('result.html')
 
 @app.route('/recommendations')
 def recommendations():
-    if 'analysis' not in session:
+    if 'image_path' not in session:
         return redirect(url_for('index'))
         
-    predicted_size = session['analysis']['size_prediction']['size']
-    style_dna = session['analysis'].get('style_dna', {})
+    analysis = get_current_analysis()
+    if not analysis:
+        return redirect(url_for('index'))
+        
+    predicted_size = analysis['size_prediction']['size']
+    style_dna = analysis.get('style_dna', {})
     top_style = max(style_dna, key=style_dna.get) if style_dna else "Luxury"
     
-    csv_path = os.path.join(os.path.dirname(__file__), 'wearwise_30_suits.csv')
+    csv_path = os.path.join(os.path.dirname(__file__), 'wearwise_products.csv')
     try:
         df = pd.read_csv(csv_path)
     except Exception as e:
         df = pd.DataFrame()
 
     if not df.empty:
-        size_matches = df[df['size'] == predicted_size].copy()
-        
-        def get_match_score(product_style):
-            ps_lower = str(product_style).lower()
-            ts_lower = str(top_style).lower()
-            if ps_lower in ts_lower or ts_lower in ps_lower:
-                return 98
-            elif ps_lower == 'luxury':
-                return 90
-            elif ps_lower in ['festive', 'wedding', 'party wea']:
-                return 85
-            else:
-                return 75
-                
-        size_matches['match_score'] = size_matches['style'].apply(get_match_score)
-        size_matches = size_matches.sort_values(by='match_score', ascending=False)
-        final_products = size_matches.head(6)
-        
-        if len(final_products) < 6:
-            needed = 6 - len(final_products)
-            alternatives = df[df['size'] != predicted_size].copy()
-            alternatives['match_score'] = alternatives['style'].apply(get_match_score) - 10
-            alternatives = alternatives.sort_values(by='match_score', ascending=False).head(needed)
-            final_products = pd.concat([final_products, alternatives])
-            
-        products = final_products.to_dict('records')
+        # Sort by style_match score descending
+        df = df.sort_values(by='style_match', ascending=False)
+        products = df.to_dict('records')
     else:
         products = []
     
@@ -124,18 +144,56 @@ def chat_api():
     data = request.json
     msg = data.get('message', '').lower()
     
-    # Mock AI Assistant responses
-    if 'size' in msg:
-        reply = "I recommend uploading a full-body photo so I can precisely determine your perfect size using our MediaPipe computer vision."
-    elif 'color' in msg:
-        reply = "Your best colors depend on your skin tone and body type. Upload a photo and select your skin tone, and I'll give you a personalized palette!"
-    elif 'wedding' in msg:
-        reply = "For weddings, rich colors like Maroon, Emerald, and Gold work beautifully. Try an elegant Saree or a tailored suit!"
-    elif 'fit' in msg:
-        reply = "A tailored or regular fit is universally flattering, but if you have an athletic build, a slim fit can accentuate your shoulders."
-    else:
-        reply = "That's a great fashion question! I'm best at analyzing body proportions and recommending fits. Try asking about sizes, colors, or event styling."
+    # Retrieve user analysis context if available
+    analysis = get_current_analysis()
+    predicted_size = None
+    body_type = None
+    
+    if analysis:
+        predicted_size = analysis.get('size_prediction', {}).get('size')
+        body_type = analysis.get('body_type_detection', {}).get('type')
         
+    # Smart keyword matching
+    if 'size' in msg or 'measure' in msg:
+        if predicted_size:
+            reply = f"Based on your photo analysis, your predicted size is **{predicted_size}**. This size corresponds to your shoulder-to-hip proportions."
+        else:
+            reply = "I recommend uploading a full-body photo on the home page so I can precisely calculate your premium size using computer vision."
+            
+    elif 'body type' in msg or 'shape' in msg:
+        if body_type:
+            reply = f"Your analyzed body silhouette is **{body_type}**. For this shape, we recommend structured tailoring that accentuates your natural frame."
+        else:
+            reply = "Upload a photo first so I can detect your body type (e.g., Rectangle, Oval, Triangle) and suggest optimized fits!"
+            
+    elif 'color' in msg or 'skin' in msg or 'palette' in msg:
+        skin_tone = session.get('analysis', {}).get('skin_tone', 'Medium')
+        reply = f"Since your skin tone profile is analyzed as {skin_tone}, we recommend rich jewel tones (like Emerald or Maroon) and luxury neutrals (like Charcoal, Cream, and Gold)."
+        
+    elif 'wedding' in msg or 'formal' in msg or 'party' in msg:
+        reply = "For formal occasions, a tailored luxury suit in Navy or deep Charcoal is timeless. We've matched some premium suits in your Collection page!"
+        
+    elif 'fit' in msg or 'cut' in msg:
+        if body_type:
+            reply = f"With your **{body_type}** silhouette, a structured slim or tailored fit works beautifully to keep your lines clean and premium."
+        else:
+            reply = "A tailored slim fit is highly recommended for luxury suits. Once you upload your photo, I can give you fit recommendations tailored to your silhouette."
+            
+    elif 'hello' in msg or 'hi' in msg or 'hey' in msg:
+        if predicted_size:
+            reply = f"Hello! I see we've analyzed your style profile. You can ask me about styling for your **{predicted_size}** size, body shape, or fit suggestions."
+        else:
+            reply = "Hello! I am your virtual stylist. Upload a photo to start, or ask me any question about sizing, colors, or fits!"
+            
+    elif 'thank' in msg:
+        reply = "It's my pleasure! Let me know if you want tips on accessories, suit selections, or fabric care."
+        
+    else:
+        if body_type:
+            reply = f"I've analyzed your styling details. I recommend exploring the **Collection** tab for outfits suited for a **{body_type}** body structure, or ask about size or color palette."
+        else:
+            reply = "That's an interesting style query! You can ask me about sizes, fit matching, color palettes, or how to style for specific occasions like weddings."
+            
     return jsonify({"reply": reply})
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -226,29 +284,35 @@ def delete_product(id):
 
 @app.route('/generate_pdf')
 def generate_pdf():
-    if 'analysis' not in session:
+    if 'image_path' not in session:
         return redirect(url_for('index'))
         
+    analysis = get_current_analysis()
+    if not analysis:
+        return redirect(url_for('index'))
+        
+    # Resolve the absolute path of the uploaded image for xhtml2pdf compatibility
+    image_path = session['image_path']
+    abs_image_path = os.path.join(app.root_path, 'static', image_path)
+    abs_image_path = abs_image_path.replace('\\', '/')
+
     html = render_template('pdf_report.html', 
-                           analysis=session['analysis'])
+                           analysis=analysis,
+                           image_path=abs_image_path)
                            
     try:
-        # Look for wkhtmltopdf in the default Windows installation folder
-        path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+        pdf_io = BytesIO()
+        pisa_status = pisa.CreatePDF(html, dest=pdf_io)
         
-        if os.path.exists(path_wkhtmltopdf):
-            config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
-            pdf = pdfkit.from_string(html, False, configuration=config)
-        else:
-            # Fallback to checking the system PATH
-            pdf = pdfkit.from_string(html, False)
+        if pisa_status.err:
+            return f"Error generating PDF: {pisa_status.err}"
             
-        response = make_response(pdf)
+        response = make_response(pdf_io.getvalue())
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = 'attachment; filename=wearwise_report.pdf'
         return response
     except Exception as e:
-        return f"Error generating PDF. Please ensure wkhtmltopdf is installed. Detail: {e}"
+        return f"Error generating PDF. Detail: {e}"
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -2,34 +2,34 @@
 
 {% block content %}
 <div class="dashboard">
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 3rem;" class="reveal">
-        <div>
-            <h1 style="font-size: 2.5rem; color: var(--accent-gold);">Analytics Overview</h1>
-            <p style="color: var(--text-muted);">Skeletal extraction and proportion mapping complete.</p>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 2rem; margin-bottom: 4rem; position: relative; z-index: 101;" class="reveal">
+        <div style="flex: 1; min-width: 300px;">
+            <h1 style="font-size: 3.5rem; color: var(--accent-gold); margin-bottom: 0.5rem; line-height: 1.1;">Analytics Overview</h1>
+            <p style="color: var(--text-muted); font-size: 1.1rem; letter-spacing: 1px;">Skeletal extraction and proportion mapping complete.</p>
         </div>
-        <div>
-            <a href="{{ url_for('generate_pdf') }}" class="btn-outline"><i class="fas fa-file-pdf"></i> Export Report</a>
-            <a href="{{ url_for('recommendations') }}" class="btn-gold" style="margin-left: 1rem;">View Collection</a>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('generate_pdf') }}" class="btn-outline" style="pointer-events: auto;"><i class="fas fa-file-pdf"></i> Export Report</a>
+            <a href="{{ url_for('recommendations') }}" class="btn-gold" style="pointer-events: auto;">View Collection</a>
         </div>
     </div>
 
     <!-- Top Scores row -->
-    <div class="dash-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 2rem;">
-        <div class="dash-card glass reveal" style="text-align: center; padding: 1.5rem;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">Symmetry</div>
-            <div style="font-size: 2.5rem; color: var(--accent-gold); font-weight: 600;">{{ session['analysis']['analytics_overview']['body_symmetry_score'] }}</div>
+    <div class="dash-grid scores-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Symmetry</div>
+            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['body_symmetry_score'] }}</div>
         </div>
-        <div class="dash-card glass reveal" style="text-align: center; padding: 1.5rem; transition-delay: 0.1s;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">Style Match</div>
-            <div style="font-size: 2.5rem; color: var(--accent-gold); font-weight: 600;">{{ session['analysis']['analytics_overview']['style_compatibility_score'] }}</div>
+        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem; transition-delay: 0.1s;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Style Match</div>
+            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['style_compatibility_score'] }}</div>
         </div>
-        <div class="dash-card glass reveal" style="text-align: center; padding: 1.5rem; transition-delay: 0.2s;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">Proportions</div>
-            <div style="font-size: 2.5rem; color: var(--accent-gold); font-weight: 600;">{{ session['analysis']['analytics_overview']['proportion_balance_score'] }}</div>
+        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem; transition-delay: 0.2s;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Proportions</div>
+            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['proportion_balance_score'] }}</div>
         </div>
-        <div class="dash-card glass reveal" style="text-align: center; padding: 1.5rem; transition-delay: 0.3s;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.5rem;">Confidence</div>
-            <div style="font-size: 2.5rem; color: var(--accent-gold); font-weight: 600;">{{ session['analysis']['analytics_overview']['fashion_confidence_score'] }}</div>
+        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem; transition-delay: 0.3s;">
+            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Confidence</div>
+            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['fashion_confidence_score'] }}</div>
         </div>
     </div>
 
@@ -145,12 +145,12 @@
 
     <!-- Lookbooks Section -->
     <div class="reveal" style="margin-top: 4rem;">
-        <h2 style="font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 3rem; text-align: center; font-family: 'Playfair Display', serif;">Stylist Lookbooks</h2>
+        <h2 style="font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 3rem; text-align: center; font-family: 'Cormorant Garamond', serif;">Stylist Lookbooks</h2>
         <div class="lookbooks-grid">
             {% for outfit in session['analysis']['outfit_recommendations'] %}
             <div class="lookbook-card glass">
                 <div class="lookbook-header">
-                    <h3 style="font-size: 1.4rem; font-family: 'Playfair Display', serif;">{{ outfit.name }}</h3>
+                    <h3 style="font-size: 1.4rem; font-family: 'Inter', sans-serif; font-weight: 600;">{{ outfit.name }}</h3>
                     <span class="match-badge-inline">{{ outfit.match_score }}% Match</span>
                 </div>
                 <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.6;">{{ outfit.reasoning }}</p>
@@ -174,8 +174,8 @@
     <div class="reveal cta-banner-container">
         <div class="cta-banner glass">
             <div class="cta-content">
-                <h2 style="font-size: 2.5rem; font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Your Curated Collection</h2>
-                <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem; max-width: 600px;">
+                <h2 style="font-size: 2.5rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; margin-bottom: 1rem; color: var(--accent-gold);">Your Curated Collection</h2>
+                <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
                     We have matched your unique size {{ session['analysis']['predicted_size'] }} proportions and style DNA to an exclusive range of premium garments.
                 </p>
                 <a href="{{ url_for('recommendations') }}" class="btn-gold" style="font-size: 1.1rem; padding: 1.2rem 3rem;">View The Collection</a>

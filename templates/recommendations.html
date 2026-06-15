@@ -15,11 +15,11 @@
     {% if products %}
     <div class="premium-product-grid">
         {% for p in products %}
-        <div class="premium-card reveal" style="transition-delay: {{ loop.index0 * 0.1 }}s;">
+        <div class="premium-card reveal" style="transition-delay: {{ loop.index0 * 0.05 }}s;">
             <div class="card-image-wrapper">
                 <img src="{{ url_for('static', filename='products/' ~ p.image) }}" alt="{{ p.name }}" onerror="this.src='https://source.unsplash.com/random/400x600/?suit,luxury'">
-                <div class="match-badge">{{ p.match_score }}% Match</div>
-                <div class="style-badge">{{ p.style }}</div>
+                <div class="match-badge">{{ p.style_match }}% Match</div>
+                <div class="style-badge">{{ p.fit }}</div>
             </div>
             <div class="card-content">
                 <div class="card-header">
@@ -27,9 +27,12 @@
                     <span class="price-badge">₹{{ p.price }}</span>
                 </div>
                 <p class="card-category">{{ p.category }}</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.4; border-left: 2px solid var(--accent-gold); padding-left: 0.8rem;">
+                    Recommended because it matches your style profile and body analysis.
+                </p>
                 <div class="card-footer">
                     <span class="size-indicator">Size: {{ p.size }}</span>
-                    <button class="btn-outline btn-sm">View Details</button>
+                    <button class="btn-outline btn-sm" style="padding: 0.5rem 1rem; font-size: 0.8rem;">View Details</button>
                 </div>
             </div>
         </div>
