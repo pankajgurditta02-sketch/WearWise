@@ -1,9 +1,25 @@
-import cv2
-import numpy as np
 import math
 import hashlib
 import random
 import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+    import cv2
+    import numpy as np
+    CV2_AVAILABLE = True
+except ImportError as e:
+    logger.error("cv2 (OpenCV) could not be imported — body image processing will be skipped: %s", e)
+    CV2_AVAILABLE = False
+
+try:
+    import mediapipe as mp
+    MP_AVAILABLE = True
+except ImportError as e:
+    logger.error("mediapipe could not be imported — pose detection will be skipped: %s", e)
+    MP_AVAILABLE = False
 
 def generate_seeded_random(seed_str):
     """Returns a random module seeded with the input string."""
@@ -59,41 +75,43 @@ def analyze_body(image_path, gender="Men", skin_tone="Medium"):
     
     confidence = rng.uniform(75.0, 98.0)
     
-    try:
-        import mediapipe as mp
-        mp_pose = mp.solutions.pose
-        pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5)
-        
-        image = cv2.imread(image_path)
-        if image is not None:
-            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            results = pose.process(image_rgb)
-            if results.pose_landmarks:
-                landmarks = results.pose_landmarks.landmark
-                left_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
-                right_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
-                left_hip = landmarks[mp_pose.PoseLandmark.LEFT_HIP.value]
-                right_hip = landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value]
-                left_ankle = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value]
-                right_ankle = landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value]
-                
-                shoulder_width = math.dist([left_shoulder.x, left_shoulder.y], [right_shoulder.x, right_shoulder.y])
-                hip_width = math.dist([left_hip.x, left_hip.y], [right_hip.x, right_hip.y])
-                waist_width = hip_width * 0.9 # Apprx
-                
-                shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
-                hip_y = (left_hip.y + right_hip.y) / 2
-                ankle_y = (left_ankle.y + right_ankle.y) / 2
-                
-                torso_height = hip_y - shoulder_y
-                leg_height = ankle_y - hip_y
-                body_height_ratio = torso_height / leg_height if leg_height > 0 else 1.0
-                shoulder_to_hip_ratio = shoulder_width / hip_width if hip_width > 0 else 1.0
-                
-                visibility_score = sum([left_shoulder.visibility, right_shoulder.visibility, left_hip.visibility, right_hip.visibility]) / 4.0
-                confidence = min(99.9, visibility_score * 100)
-    except Exception as e:
-        print(f"MediaPipe processing skipped/failed: {e}")
+    if CV2_AVAILABLE and MP_AVAILABLE:
+        try:
+            mp_pose = mp.solutions.pose
+            pose = mp_pose.Pose(static_image_mode=True, min_detection_confidence=0.5)
+
+            image = cv2.imread(image_path)
+            if image is not None:
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                results = pose.process(image_rgb)
+                if results.pose_landmarks:
+                    landmarks = results.pose_landmarks.landmark
+                    left_shoulder = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value]
+                    right_shoulder = landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER.value]
+                    left_hip = landmarks[mp_pose.PoseLandmark.LEFT_HIP.value]
+                    right_hip = landmarks[mp_pose.PoseLandmark.RIGHT_HIP.value]
+                    left_ankle = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value]
+                    right_ankle = landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value]
+
+                    shoulder_width = math.dist([left_shoulder.x, left_shoulder.y], [right_shoulder.x, right_shoulder.y])
+                    hip_width = math.dist([left_hip.x, left_hip.y], [right_hip.x, right_hip.y])
+                    waist_width = hip_width * 0.9  # Approx
+
+                    shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
+                    hip_y = (left_hip.y + right_hip.y) / 2
+                    ankle_y = (left_ankle.y + right_ankle.y) / 2
+
+                    torso_height = hip_y - shoulder_y
+                    leg_height = ankle_y - hip_y
+                    body_height_ratio = torso_height / leg_height if leg_height > 0 else 1.0
+                    shoulder_to_hip_ratio = shoulder_width / hip_width if hip_width > 0 else 1.0
+
+                    visibility_score = sum([left_shoulder.visibility, right_shoulder.visibility, left_hip.visibility, right_hip.visibility]) / 4.0
+                    confidence = min(99.9, visibility_score * 100)
+        except Exception as e:
+            logger.warning("MediaPipe pose detection failed, falling back to seeded estimates: %s", e)
+    else:
+        logger.info("OpenCV/MediaPipe unavailable — using seeded random estimates for body analysis.")
 
     # Body Type
     if shoulder_to_hip_ratio > 1.2:
