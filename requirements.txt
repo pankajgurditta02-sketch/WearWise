@@ -1,7 +1,9 @@
 Flask==3.0.0
 opencv-python-headless==4.8.1.78
-mediapipe
+mediapipe==0.10.9
 numpy==1.26.2
 pandas==2.2.2
-xhtml2pdf==0.2.11
-gunicorn
+xhtml2pdf==0.2.15
+gunicorn==23.0.0
+Werkzeug==3.0.1
+
