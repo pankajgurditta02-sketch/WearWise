@@ -91,8 +91,7 @@
             </div>
             
             <div style="display: flex; gap: 1rem;">
-                <button class="btn-gold" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showFormView()">Reserve Fit</button>
-                <button class="btn-outline" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="alert('Virtual trial fitting room under construction!')">Virtual Try-On</button>
+                <button class="btn-gold" style="width: 100%; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showFormView()">Reserve Fit</button>
             </div>
         </div>
 
@@ -145,8 +144,109 @@
                 </form>
             </div>
         </div>
+
+        <!-- Right Side: Reservation Success Animation -->
+        <div id="modalSuccessView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <div class="success-checkmark-wrapper" style="margin-bottom: 2rem; position: relative; width: 100px; height: 100px;">
+                <!-- Pulsing glowing rings -->
+                <div class="pulse-ring"></div>
+                <!-- Drawing SVG Checkmark -->
+                <svg class="checkmark-svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            <h3 style="color: var(--accent-gold); font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600; letter-spacing: 1px; animation: fadeInUp 0.6s ease-out 0.8s both;">MEASUREMENTS SECURED</h3>
+            <p style="color: #fff; font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 280px; font-weight: 300; line-height: 1.5; animation: fadeInUp 0.6s ease-out 1s both;">Your custom fit order has been successfully transmitted to our stylist command center.</p>
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; animation: fadeInUp 0.6s ease-out 1.2s both;">Transmission Complete</div>
+        </div>
     </div>
 </div>
+
+<style>
+.pulse-ring {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border: 2px solid var(--accent-gold);
+    border-radius: 50%;
+    animation: pulseRing 1.5s infinite ease-in-out;
+}
+.checkmark-svg {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3;
+    stroke: var(--accent-gold);
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px var(--accent-gold);
+    animation: fillCheckmark .4s ease-in-out .4s forwards, scaleCheckmark .3s ease-in-out .9s alternate both;
+}
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3;
+    stroke-miterlimit: 10;
+    stroke: var(--accent-gold);
+    fill: none;
+    animation: strokeCircle .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.checkmark-check {
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    stroke-width: 4;
+    stroke-linecap: round;
+    animation: strokeCheck .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes pulseRing {
+    0% {
+        transform: scale(0.6);
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1.3);
+        opacity: 0;
+    }
+}
+@keyframes strokeCircle {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+@keyframes strokeCheck {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+@keyframes fillCheckmark {
+    to {
+        box-shadow: inset 0px 0px 0px 50px rgba(212, 175, 55, 0.05);
+    }
+}
+@keyframes scaleCheckmark {
+    0%, 100% {
+        transform: none;
+    }
+    50% {
+        transform: scale3d(1.1, 1.1, 1);
+    }
+}
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
 
 <script>
 function openProductModal(name, img, price, match, fit, cat, body, tone, accents, desc) {
@@ -175,16 +275,23 @@ function closeProductModal() {
 
 function showFormView() {
     document.getElementById('modalDetailsView').style.display = 'none';
+    document.getElementById('modalSuccessView').style.display = 'none';
     document.getElementById('modalFormView').style.display = 'flex';
 }
 
 function showDetailsView() {
     document.getElementById('modalFormView').style.display = 'none';
+    document.getElementById('modalSuccessView').style.display = 'none';
     document.getElementById('modalDetailsView').style.display = 'flex';
 }
 
 function submitReservation(e) {
     e.preventDefault();
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerText;
+    submitBtn.disabled = true;
+    submitBtn.innerText = "TRANSMITTING...";
     
     const payload = {
         name: document.getElementById('reserveName').value,
@@ -208,15 +315,28 @@ function submitReservation(e) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert('Custom fit reserved successfully! Your details have been submitted to the stylist dashboard.');
+            // Hide form and show success view animation
+            document.getElementById('modalFormView').style.display = 'none';
+            document.getElementById('modalSuccessView').style.display = 'flex';
+            
             document.getElementById('reservationForm').reset();
-            closeProductModal();
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+            
+            // Auto close modal after 4 seconds
+            setTimeout(() => {
+                closeProductModal();
+            }, 4000);
         } else {
             alert('Failed to save reservation: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
         }
     })
     .catch(err => {
         alert('Server connection failed: ' + err);
+        submitBtn.disabled = false;
+        submitBtn.innerText = originalText;
     });
 }
 </script>

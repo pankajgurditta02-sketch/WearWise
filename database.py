@@ -58,10 +58,10 @@ def init_db():
     ''')
 
     # Insert default admin user if not exists
-    cursor.execute("SELECT * FROM users WHERE username = 'admin'")
+    cursor.execute("SELECT * FROM users WHERE username = 'Pankaj_Gurditta'")
     if not cursor.fetchone():
-        cursor.execute("INSERT INTO users (username, password) VALUES ('admin', 'admin')")
-        print("Default admin user created (admin/admin)")
+        cursor.execute("INSERT INTO users (username, password) VALUES ('Pankaj_Gurditta', 'Pankaj$02')")
+        print("Default admin user created (Pankaj_Gurditta/Pankaj$02)")
 
     # Insert sample products if table is empty
     cursor.execute("SELECT COUNT(*) FROM products")

@@ -471,14 +471,53 @@ def add_product():
     cat = request.form['category']
     body_type = request.form['body_type_suitability']
     fit = request.form['suggested_fit']
+    price = request.form.get('price', 2999)
     
+    # Handle Image Upload
+    image_file = request.files.get('image')
+    image_filename = ""
+    if image_file and image_file.filename:
+        filename = secure_filename(image_file.filename)
+        products_dir = os.path.join(app.root_path, 'static', 'products')
+        os.makedirs(products_dir, exist_ok=True)
+        image_file.save(os.path.join(products_dir, filename))
+        image_filename = filename
+
+    # Save to CSV so it shows up in Recommendations/Collections
+    csv_path = os.path.join(os.path.dirname(__file__), 'wearwise_products.csv')
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception:
+        df = pd.DataFrame(columns=["id", "name", "image", "price", "size", "fit", "category", "gender", "match_score", "body_type", "skin_tone", "recommer", "description", "style_match"])
+
+    next_id = int(df['id'].max() + 1) if not df.empty else 1
+    new_row = {
+        "id": next_id,
+        "name": name,
+        "image": image_filename,
+        "price": int(price),
+        "size": "M",  # Base size
+        "fit": fit,
+        "category": cat,
+        "gender": gender,
+        "match_score": 85,
+        "body_type": body_type,
+        "skin_tone": "Medium",
+        "recommer": "Peach, Cre",
+        "description": desc,
+        "style_match": 85
+    }
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    df.to_csv(csv_path, index=False)
+
+    # Save to SQLite Database
     conn = get_db_connection()
     try:
         conn.execute('INSERT INTO products (name, code, description, gender, category, body_type_suitability, suggested_fit) VALUES (?, ?, ?, ?, ?, ?, ?)',
                      (name, code, desc, gender, cat, body_type, fit))
         conn.commit()
     except Exception as e:
-        pass # Handle unique constraint error etc.
+        pass
     conn.close()
     
     return redirect(url_for('admin'))
@@ -487,9 +526,24 @@ def add_product():
 def delete_product(id):
     if not session.get('admin'):
         return redirect(url_for('login'))
+        
     conn = get_db_connection()
-    conn.execute('DELETE FROM products WHERE id = ?', (id,))
-    conn.commit()
+    product = conn.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
+    if product:
+        name_to_delete = product['name']
+        conn.execute('DELETE FROM products WHERE id = ?', (id,))
+        conn.commit()
+        
+        # Also remove from CSV
+        csv_path = os.path.join(os.path.dirname(__file__), 'wearwise_products.csv')
+        try:
+            df = pd.read_csv(csv_path)
+            # Remove by matching name (case-insensitive)
+            df = df[df['name'].str.lower() != name_to_delete.lower()]
+            df.to_csv(csv_path, index=False)
+        except Exception:
+            pass
+            
     conn.close()
     return redirect(url_for('admin'))
 
