@@ -36,7 +36,7 @@
                 </div>
                 <div class="card-footer">
                     <span class="size-indicator">Size: {{ p.size }}</span>
-                    <button class="btn-outline btn-sm" style="padding: 0.5rem 1rem; font-size: 0.8rem;">View Details</button>
+                    <button class="btn-outline btn-sm" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="openProductModal('{{ p.name }}', '{{ p.image }}', '{{ p.price }}', '{{ p.style_match }}', '{{ p.fit }}', '{{ p.category }}', '{{ p.body_type }}', '{{ p.skin_tone }}', '{{ p.recommer }}', '{{ p.description }}')">View Details</button>
                 </div>
             </div>
         </div>
@@ -48,4 +48,176 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Premium Product Details Modal -->
+<div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(8px); z-index: 10000; justify-content: center; align-items: center; padding: 2rem;" onclick="if(event.target == this) closeProductModal()">
+    <div class="glass" style="max-width: 800px; width: 100%; background: rgba(15, 15, 15, 0.95); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; display: flex; flex-wrap: wrap; position: relative; box-shadow: var(--glass-shadow);">
+        <!-- Close Button -->
+        <button onclick="closeProductModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer; z-index: 10;"><i class="fas fa-times"></i></button>
+        
+        <!-- Left Side: Image -->
+        <div style="flex: 1; min-width: 300px; height: 450px; overflow: hidden; position: relative;">
+            <img id="modalProductImg" src="" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+            <div id="modalProductMatch" class="match-badge" style="position: absolute; top: 1rem; left: 1rem; background: rgba(10, 10, 10, 0.85); color: var(--accent-gold); padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; font-size: 0.8rem; border: 1px solid rgba(230, 194, 122, 0.3);"></div>
+        </div>
+        
+        <!-- Right Side: Details -->
+        <div id="modalDetailsView" style="flex: 1.2; min-width: 320px; padding: 3rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <span id="modalProductCategory" style="color: var(--accent-gold); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;"></span>
+                <h2 id="modalProductName" style="font-size: 2.2rem; margin: 0.5rem 0 1rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; color: #fff;"></h2>
+                <div style="font-size: 1.5rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 1.5rem;" id="modalProductPrice"></div>
+                
+                <p id="modalProductDesc" style="color: #ccc; font-size: 0.9rem; line-height: 1.6; margin-bottom: 2rem; border-left: 2px solid var(--accent-gold); padding-left: 1rem;"></p>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
+                        <span style="color: var(--text-muted);">SUGGESTED FIT</span>
+                        <span id="modalProductFit" style="color: #fff; font-weight: 500;"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
+                        <span style="color: var(--text-muted);">BODY TYPE SUITABILITY</span>
+                        <span id="modalProductBody" style="color: #fff; font-weight: 500;"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
+                        <span style="color: var(--text-muted);">SKIN TONE PAIRING</span>
+                        <span id="modalProductTone" style="color: #fff; font-weight: 500;"></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding-bottom: 0.4rem;">
+                        <span style="color: var(--text-muted);">RECOMMENDED ACCENTS</span>
+                        <span id="modalProductAccents" style="color: var(--accent-gold); font-weight: 500;"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-gold" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showFormView()">Reserve Fit</button>
+                <button class="btn-outline" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="alert('Virtual trial fitting room under construction!')">Virtual Try-On</button>
+            </div>
+        </div>
+
+        <!-- Right Side: Reservation Form -->
+        <div id="modalFormView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h3 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600;">Custom Fit Reservation</h3>
+                <form id="reservationForm" onsubmit="submitReservation(event)">
+                    <input type="hidden" id="reserveSuitName">
+                    <input type="hidden" id="reserveSuitPrice">
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">YOUR FULL NAME</label>
+                            <input type="text" id="reserveName" required style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">EMAIL ADDRESS</label>
+                            <input type="email" id="reserveEmail" required style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">PHONE NUMBER</label>
+                            <input type="tel" id="reservePhone" required style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">BUST (INCHES)</label>
+                                <input type="text" id="reserveBust" placeholder="e.g. 34" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">WAIST (INCHES)</label>
+                                <input type="text" id="reserveWaist" placeholder="e.g. 28" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">HIPS (INCHES)</label>
+                                <input type="text" id="reserveHips" placeholder="e.g. 38" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">HEIGHT (CM)</label>
+                                <input type="text" id="reserveHeight" placeholder="e.g. 165" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn-gold" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;">Submit Order</button>
+                        <button type="button" class="btn-outline" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showDetailsView()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openProductModal(name, img, price, match, fit, cat, body, tone, accents, desc) {
+    document.getElementById('modalProductName').innerText = name;
+    document.getElementById('modalProductImg').src = "{{ url_for('static', filename='products/') }}" + img;
+    document.getElementById('modalProductPrice').innerText = '₹' + price;
+    document.getElementById('modalProductMatch').innerText = match + '% Match';
+    document.getElementById('modalProductFit').innerText = fit;
+    document.getElementById('modalProductCategory').innerText = cat;
+    document.getElementById('modalProductBody').innerText = body;
+    document.getElementById('modalProductTone').innerText = tone;
+    document.getElementById('modalProductAccents').innerText = accents;
+    document.getElementById('modalProductDesc').innerText = desc;
+    
+    // Populate hidden inputs
+    document.getElementById('reserveSuitName').value = name;
+    document.getElementById('reserveSuitPrice').value = price;
+    
+    showDetailsView();
+    document.getElementById('productModal').style.display = 'flex';
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+}
+
+function showFormView() {
+    document.getElementById('modalDetailsView').style.display = 'none';
+    document.getElementById('modalFormView').style.display = 'flex';
+}
+
+function showDetailsView() {
+    document.getElementById('modalFormView').style.display = 'none';
+    document.getElementById('modalDetailsView').style.display = 'flex';
+}
+
+function submitReservation(e) {
+    e.preventDefault();
+    
+    const payload = {
+        name: document.getElementById('reserveName').value,
+        email: document.getElementById('reserveEmail').value,
+        phone: document.getElementById('reservePhone').value,
+        bust: document.getElementById('reserveBust').value,
+        waist: document.getElementById('reserveWaist').value,
+        hips: document.getElementById('reserveHips').value,
+        height: document.getElementById('reserveHeight').value,
+        suit_name: document.getElementById('reserveSuitName').value,
+        price: document.getElementById('reserveSuitPrice').value
+    };
+
+    fetch('/api/reserve', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Custom fit reserved successfully! Your details have been submitted to the stylist dashboard.');
+            document.getElementById('reservationForm').reset();
+            closeProductModal();
+        } else {
+            alert('Failed to save reservation: ' + data.message);
+        }
+    })
+    .catch(err => {
+        alert('Server connection failed: ' + err);
+    });
+}
+</script>
 {% endblock %}

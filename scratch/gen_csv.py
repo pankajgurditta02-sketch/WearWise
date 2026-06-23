@@ -10,18 +10,27 @@ body_types = ['Pear', 'Rectangle', 'Apple', 'Inverted Triangle', 'Hourglass']
 skin_tones = ['Medium', 'Wheatish', 'Dusky', 'Fair']
 recommers = ['Peach, Cre', 'Emerald, N', 'Black, Silve', 'Maroon, G']
 
+# Map strictly to valid existing files in static/products
+valid_images = [
+    "suit1.jpg", "suit2.jpg", "suit3.jpg", "suit5.jpg", "suit6.jpg", 
+    "suit9.jpg", "suit10.jpg", "suit11.jpg", "suit13.jpg", "suit14.jpg", 
+    "suit15.jpg", "suit16.jpg", "suit17.jpg", "suit18.jpg", "suit19.jpg", 
+    "suit20.png", "suit21.jpg", "suit22.jpg", "suit23.jpg", "suit24.jpg", 
+    "suit25.jpg", "suit26.jpg", "suit27.jpg", "suit28.jpg", "suit29.jpg", 
+    "suit30.jpg"
+]
+
 rows = []
 for i in range(1, 31):
     id_val = i
-    name_val = "Suit Collec"
-    image_val = f"suit{i}.jpg"
+    name_val = f"Suit Collection #{i}"
+    image_val = valid_images[(i - 1) % len(valid_images)]
     price_val = 1949 + (i - 1) * 50
     size_val = sizes[(i - 1) % 4]
     fit_val = fits[(i - 1) % 4]
     cat_val = categories[(i - 1) % 6]
     gender_val = "Women"
     
-    # match score logic: starts at 81, goes up by 1 to 99 (at i=19), then at i=20 wraps to 80, then 81, 82...
     if i <= 19:
         match_score_val = 80 + i
     else:
@@ -46,7 +55,7 @@ for i in range(1, 31):
         "skin_tone": skin_tone_val,
         "recommer": recommer_val,
         "description": desc_val,
-        "style_match": match_score_val  # alias to prevent breaking existing python code
+        "style_match": match_score_val
     })
 
 fieldnames = ["id", "name", "image", "price", "size", "fit", "category", "gender", "match_score", "body_type", "skin_tone", "recommer", "description", "style_match"]
@@ -56,4 +65,4 @@ with open(csv_path, mode='w', newline='', encoding='utf-8') as f:
     writer.writeheader()
     writer.writerows(rows)
 
-print("wearwise_products.csv generated successfully with 30 rows.")
+print("wearwise_products.csv updated with corrected images and names.")

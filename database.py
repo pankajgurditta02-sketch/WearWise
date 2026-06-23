@@ -40,6 +40,23 @@ def init_db():
         )
     ''')
 
+    # Create Reservations table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS reservations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            phone TEXT NOT NULL,
+            bust TEXT,
+            waist TEXT,
+            hips TEXT,
+            height TEXT,
+            suit_name TEXT NOT NULL,
+            price INTEGER NOT NULL
+        )
+    ''')
+
     # Insert default admin user if not exists
     cursor.execute("SELECT * FROM users WHERE username = 'admin'")
     if not cursor.fetchone():

@@ -187,4 +187,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') sendMessage();
         });
     }
+
+    // Suggested prompts helper
+    window.sendPrompt = (text) => {
+        const chatInput = document.getElementById('chatInput');
+        const chatBtn = document.getElementById('chatBtn');
+        if (chatInput && chatBtn) {
+            chatInput.value = text;
+            chatBtn.click();
+        }
+    };
 });

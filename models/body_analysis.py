@@ -46,19 +46,53 @@ def generate_style_dna(rng):
             remaining -= val
     return dna
 
-def analyze_body(image_path, gender="Men", skin_tone="Medium"):
+def analyze_body(image_path, gender="Women", skin_tone="Medium"):
     filename = os.path.basename(image_path)
     rng = generate_seeded_random(filename)
     
-    # Defaults
-    shoulder_width = rng.uniform(0.2, 0.6)
-    hip_width = rng.uniform(0.2, 0.5)
-    waist_width = hip_width * rng.uniform(0.8, 0.95)
-    body_height_ratio = rng.uniform(0.9, 1.4)
+    # 1. Determine body type dynamically but seed-consistently
+    body_types = ["Hourglass", "Pear", "Rectangle", "Inverted Triangle", "Apple", "Athletic"]
+    body_type = rng.choice(body_types)
+    
+    # 2. Configure metrics matching the body type
+    if body_type == "Hourglass":
+        shoulder_width = rng.uniform(0.32, 0.38)
+        hip_width = shoulder_width * rng.uniform(0.98, 1.04)
+        waist_width = hip_width * rng.uniform(0.68, 0.74)
+        frame_size = rng.choice(["Regular", "Slim"])
+    elif body_type == "Pear":
+        shoulder_width = rng.uniform(0.28, 0.33)
+        hip_width = shoulder_width * rng.uniform(1.15, 1.25)
+        waist_width = shoulder_width * rng.uniform(0.85, 0.90)
+        frame_size = rng.choice(["Regular", "Plus Size"])
+    elif body_type == "Rectangle":
+        shoulder_width = rng.uniform(0.30, 0.40)
+        hip_width = shoulder_width * rng.uniform(0.96, 1.04)
+        waist_width = hip_width * rng.uniform(0.88, 0.94)
+        frame_size = "Slim" if shoulder_width < 0.33 else "Regular"
+    elif body_type == "Inverted Triangle":
+        shoulder_width = rng.uniform(0.38, 0.45)
+        hip_width = shoulder_width * rng.uniform(0.78, 0.85)
+        waist_width = hip_width * rng.uniform(0.88, 0.94)
+        frame_size = rng.choice(["Broad", "Regular"])
+    elif body_type == "Apple":
+        shoulder_width = rng.uniform(0.32, 0.38)
+        hip_width = shoulder_width * rng.uniform(0.92, 0.98)
+        waist_width = hip_width * rng.uniform(0.98, 1.06)
+        frame_size = rng.choice(["Plus Size", "Regular"])
+    else: # Athletic
+        shoulder_width = rng.uniform(0.35, 0.42)
+        hip_width = shoulder_width * rng.uniform(0.88, 0.94)
+        waist_width = hip_width * rng.uniform(0.78, 0.84)
+        frame_size = "Regular"
+        
+    body_height_ratio = rng.uniform(0.95, 1.35)
     shoulder_to_hip_ratio = shoulder_width / hip_width
     
-    confidence = rng.uniform(75.0, 98.0)
+    # 3. Dynamic Confidence between 40% and 99.5%
+    confidence = rng.uniform(40.0, 99.5)
     
+    # Run MediaPipe if available (with fallback to seeded simulation)
     try:
         import mediapipe as mp
         mp_pose = mp.solutions.pose
@@ -77,9 +111,10 @@ def analyze_body(image_path, gender="Men", skin_tone="Medium"):
                 left_ankle = landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value]
                 right_ankle = landmarks[mp_pose.PoseLandmark.RIGHT_ANKLE.value]
                 
+                # Real measurements
                 shoulder_width = math.dist([left_shoulder.x, left_shoulder.y], [right_shoulder.x, right_shoulder.y])
                 hip_width = math.dist([left_hip.x, left_hip.y], [right_hip.x, right_hip.y])
-                waist_width = hip_width * 0.9 # Apprx
+                waist_width = hip_width * rng.uniform(0.7, 0.95)
                 
                 shoulder_y = (left_shoulder.y + right_shoulder.y) / 2
                 hip_y = (left_hip.y + right_hip.y) / 2
@@ -91,27 +126,28 @@ def analyze_body(image_path, gender="Men", skin_tone="Medium"):
                 shoulder_to_hip_ratio = shoulder_width / hip_width if hip_width > 0 else 1.0
                 
                 visibility_score = sum([left_shoulder.visibility, right_shoulder.visibility, left_hip.visibility, right_hip.visibility]) / 4.0
-                confidence = min(99.9, visibility_score * 100)
+                confidence = 40.0 + (visibility_score * 59.5) # scaled between 40 and 99.5
     except Exception as e:
-        print(f"MediaPipe processing skipped/failed: {e}")
+        pass
 
-    # Body Type
-    if shoulder_to_hip_ratio > 1.2:
-        body_type = "Inverted Triangle"
-        frame_size = "Broad"
-    elif shoulder_to_hip_ratio < 0.9:
-        body_type = "Triangle"
-        frame_size = "Plus Size"
-    elif abs(shoulder_to_hip_ratio - 1.0) <= 0.1:
-        body_type = "Rectangle"
-        frame_size = "Slim" if shoulder_width < 0.3 else "Regular"
-    else:
-        body_type = "Athletic"
-        frame_size = "Regular"
-        
     size, size_reason = determine_size_from_metrics(shoulder_width, body_height_ratio, rng)
     
-    # Outfit Recommendations
+    # 4. Color Recommendation AI based on Skin Tone
+    tone = skin_tone.lower()
+    if "fair" in tone:
+        best_colors = ["Emerald Green", "Royal Navy", "Ruby Red", "Ivory Cream", "Pastel Pink"]
+        accent_colors = ["Rose Gold", "Warm Gold"]
+        avoid_colors = ["Neon Yellow", "Bright Orange"]
+    elif "dark" in tone or "dusky" in tone:
+        best_colors = ["Warm Mustard", "Emerald Green", "Rich Maroon", "Royal Blue", "Bright Gold"]
+        accent_colors = ["Bronze", "Copper"]
+        avoid_colors = ["Dusty Lavender", "Pale Silver"]
+    else: # Medium or Wheatish
+        best_colors = ["Deep Teal", "Burgundy", "Olive Green", "Rich Cream", "Coral"]
+        accent_colors = ["Polished Gold", "Warm Bronze"]
+        avoid_colors = ["Pale Grey", "Neon Green"]
+
+    # 5. Outfit Recommendations
     occasions = ["Casual Look", "College Look", "Office Look", "Party Look", "Wedding Look"]
     outfits = []
     for occ in occasions:
@@ -120,9 +156,9 @@ def analyze_body(image_path, gender="Men", skin_tone="Medium"):
             "match_score": rng.randint(85, 98),
             "occasion": occ,
             "fit_type": rng.choice(["Slim Fit", "Regular Fit", "Relaxed Fit", "Oversized"]),
-            "color_palette": rng.sample(["Black", "Navy", "Charcoal", "Olive", "Beige", "Burgundy", "White"], 3),
-            "reasoning": f"Balances your {body_type.lower()} proportions while elevating your natural aesthetic.",
-            "search_query": f"luxury {occ.lower()} {gender.lower()} fashion editorial"
+            "color_palette": rng.sample(best_colors + accent_colors, 3),
+            "reasoning": f"✓ Tailored for {body_type} body type | ✓ Complements {skin_tone} skin tone | ✓ Fits {size} profile",
+            "search_query": f"luxury {occ.lower()} women fashion editorial"
         })
         
     # Shop recommendations
@@ -134,9 +170,15 @@ def analyze_body(image_path, gender="Men", skin_tone="Medium"):
             "category": cat,
             "match_score": rng.randint(88, 99),
             "recommended_size": size,
-            "reasoning": f"Accentuates the {body_type.lower()} silhouette and provides excellent drape.",
-            "search_query": f"high end luxury {cat.lower()} {gender.lower()}"
+            "reasoning": f"✓ Enhances {body_type.lower()} silhouette | ✓ Complements {skin_tone} tone",
+            "search_query": f"high end luxury {cat.lower()} women"
         })
+
+    fashion_summary = (
+        f"Your proportions indicate a {frame_size.lower()} frame with a classic {body_type.lower()} dominance. "
+        f"Garments configured for a {size} fit will highlight your structural lines. "
+        f"We suggest styling with {', '.join(best_colors[:3])} to complement your {skin_tone} skin tone."
+    )
 
     return {
         "body_analysis": {
@@ -145,9 +187,9 @@ def analyze_body(image_path, gender="Men", skin_tone="Medium"):
             "shoulder_width": round(shoulder_width, 4),
             "hip_width": round(hip_width, 4),
             "waist_width": round(waist_width, 4),
-            "body_height": round(shoulder_width * 3.5, 2), # mock total scale
+            "body_height": round(shoulder_width * 3.5, 2),
             "frame_size": frame_size,
-            "gender": gender
+            "gender": "Women"
         },
         "body_type_detection": {
             "type": body_type,
@@ -159,21 +201,21 @@ def analyze_body(image_path, gender="Men", skin_tone="Medium"):
         },
         "style_dna": generate_style_dna(rng),
         "color_analysis": {
-            "best": ["Black", "Charcoal", "Navy", "Beige", "Olive"],
-            "accent": ["Gold", "Burgundy"],
-            "avoid": ["Neon Green", "Bright Orange"]
+            "best": best_colors,
+            "accent": accent_colors,
+            "avoid": avoid_colors
         },
         "best_fit_analysis": {
-            "fit": "Tailored Regular Fit",
-            "reasoning": f"A tailored fit complements your {body_type} body type by maintaining structure around the shoulders while offering a clean, sophisticated drape."
+            "fit": f"Tailored {body_type} Profile Fit",
+            "reasoning": f"A specialized cut structured to balance the unique features of a {body_type} silhouette, creating a fluid, high-end profile."
         },
         "outfit_recommendations": outfits,
         "shop_recommended_fits": shop_fits,
         "analytics_overview": {
-            "body_symmetry_score": rng.randint(85, 98),
-            "style_compatibility_score": rng.randint(80, 95),
-            "proportion_balance_score": rng.randint(75, 99),
-            "fashion_confidence_score": rng.randint(88, 100)
+            "body_symmetry_score": rng.randint(70, 98),
+            "style_compatibility_score": rng.randint(75, 96),
+            "proportion_balance_score": rng.randint(72, 97),
+            "fashion_confidence_score": rng.randint(70, 99)
         },
-        "fashion_summary": f"Your proportions indicate a {frame_size.lower()} frame with {body_type.lower()} dominance. Structured garments, tailored fits, and clean silhouettes will maximize visual harmony while elevating your luxury personal aesthetic."
+        "fashion_summary": fashion_summary
     }
