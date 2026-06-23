@@ -126,6 +126,9 @@ def recommendations():
         df = pd.DataFrame()
 
     if not df.empty:
+        # Filter products to match the user's predicted size from the AI analysis
+        if 'size' in df.columns:
+            df = df[df['size'].astype(str).str.strip().str.upper() == predicted_size.strip().upper()]
         # Sort by style_match score descending
         df = df.sort_values(by='style_match', ascending=False)
         products = df.to_dict('records')

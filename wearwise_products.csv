@@ -1,16 +1,31 @@
-image,name,category,size,price,fit,style_match
-suit31 (1).jpeg,Designer R SUIT,SUIT,M,2199,Regular Fit,92
-suit31 (2).jpeg,Classic Eth SUIT,SUIT,M,2399,Slim Fit,90
-suit31 (3).jpeg,Luxury Fes SUIT,SUIT,M,2499,Regular Fit,95
-suit31 (4).jpeg,Premium V SUIT,SUIT,M,2299,Tailored Fit,91
-suit31 (5).jpeg,Elegant He SUIT,SUIT,M,1999,Regular Fit,88
-suit31 (6).jpeg,Modern Tr SUIT,SUIT,M,2099,Slim Fit,89
-suit31 (7).jpeg,Royal Cele SUIT,SUIT,M,2499,Regular Fit,94
-suit31 (8).jpeg,Classic Pre SUIT,SUIT,M,2199,Tailored Fit,90
-suit31 (9).jpeg,Elite Desig SUIT,SUIT,M,2399,Regular Fit,93
-suit31 (10).jpeg,Signature I SUIT,SUIT,M,2299,Slim Fit,91
-suit31 (11).jpeg,Heritage C SUIT,SUIT,M,1899,Regular Fit,87
-suit31 (12).jpeg,Grand Occ SUIT,SUIT,M,2499,Tailored Fit,95
-suit31 (13).jpeg,Premium E SUIT,SUIT,M,2199,Regular Fit,89
-suit31 (14).jpeg,Exclusive F SUIT,SUIT,M,2399,Slim Fit,92
-suit31 (15).jpeg,Royal Pres SUIT,SUIT,M,2499,Tailored Fit,96
+id,name,image,price,size,fit,category,gender,match_score,body_type,skin_tone,recommer,description,style_match
+1,Suit Collec,suit1.jpg,1949,M,Slim Fit,Casual,Women,81,Pear,Medium,"Peach, Cre",Recommended outfit #1 based on body analysis and style preferences.,81
+2,Suit Collec,suit2.jpg,1999,L,Tailored Fit,Office,Women,82,Rectangle,Wheatish,"Emerald, N",Recommended outfit #2 based on body analysis and style preferences.,82
+3,Suit Collec,suit3.jpg,2049,XL,Oversized,Party,Women,83,Apple,Dusky,"Black, Silve",Recommended outfit #3 based on body analysis and style preferences.,83
+4,Suit Collec,suit4.jpg,2099,S,Regular Fit,Wedding,Women,84,Inverted Triangle,Fair,"Maroon, G",Recommended outfit #4 based on body analysis and style preferences.,84
+5,Suit Collec,suit5.jpg,2149,M,Slim Fit,Festive,Women,85,Hourglass,Medium,"Peach, Cre",Recommended outfit #5 based on body analysis and style preferences.,85
+6,Suit Collec,suit6.jpg,2199,L,Tailored Fit,College,Women,86,Pear,Wheatish,"Emerald, N",Recommended outfit #6 based on body analysis and style preferences.,86
+7,Suit Collec,suit7.jpg,2249,XL,Oversized,Casual,Women,87,Rectangle,Dusky,"Black, Silve",Recommended outfit #7 based on body analysis and style preferences.,87
+8,Suit Collec,suit8.jpg,2299,S,Regular Fit,Office,Women,88,Apple,Fair,"Maroon, G",Recommended outfit #8 based on body analysis and style preferences.,88
+9,Suit Collec,suit9.jpg,2349,M,Slim Fit,Party,Women,89,Inverted Triangle,Medium,"Peach, Cre",Recommended outfit #9 based on body analysis and style preferences.,89
+10,Suit Collec,suit10.jpg,2399,L,Tailored Fit,Wedding,Women,90,Hourglass,Wheatish,"Emerald, N",Recommended outfit #10 based on body analysis and style preferences.,90
+11,Suit Collec,suit11.jpg,2449,XL,Oversized,Festive,Women,91,Pear,Dusky,"Black, Silve",Recommended outfit #11 based on body analysis and style preferences.,91
+12,Suit Collec,suit12.jpg,2499,S,Regular Fit,College,Women,92,Rectangle,Fair,"Maroon, G",Recommended outfit #12 based on body analysis and style preferences.,92
+13,Suit Collec,suit13.jpg,2549,M,Slim Fit,Casual,Women,93,Apple,Medium,"Peach, Cre",Recommended outfit #13 based on body analysis and style preferences.,93
+14,Suit Collec,suit14.jpg,2599,L,Tailored Fit,Office,Women,94,Inverted Triangle,Wheatish,"Emerald, N",Recommended outfit #14 based on body analysis and style preferences.,94
+15,Suit Collec,suit15.jpg,2649,XL,Oversized,Party,Women,95,Hourglass,Dusky,"Black, Silve",Recommended outfit #15 based on body analysis and style preferences.,95
+16,Suit Collec,suit16.jpg,2699,S,Regular Fit,Wedding,Women,96,Pear,Fair,"Maroon, G",Recommended outfit #16 based on body analysis and style preferences.,96
+17,Suit Collec,suit17.jpg,2749,M,Slim Fit,Festive,Women,97,Rectangle,Medium,"Peach, Cre",Recommended outfit #17 based on body analysis and style preferences.,97
+18,Suit Collec,suit18.jpg,2799,L,Tailored Fit,College,Women,98,Apple,Wheatish,"Emerald, N",Recommended outfit #18 based on body analysis and style preferences.,98
+19,Suit Collec,suit19.jpg,2849,XL,Oversized,Casual,Women,99,Inverted Triangle,Dusky,"Black, Silve",Recommended outfit #19 based on body analysis and style preferences.,99
+20,Suit Collec,suit20.jpg,2899,S,Regular Fit,Office,Women,80,Hourglass,Fair,"Maroon, G",Recommended outfit #20 based on body analysis and style preferences.,80
+21,Suit Collec,suit21.jpg,2949,M,Slim Fit,Party,Women,81,Pear,Medium,"Peach, Cre",Recommended outfit #21 based on body analysis and style preferences.,81
+22,Suit Collec,suit22.jpg,2999,L,Tailored Fit,Wedding,Women,82,Rectangle,Wheatish,"Emerald, N",Recommended outfit #22 based on body analysis and style preferences.,82
+23,Suit Collec,suit23.jpg,3049,XL,Oversized,Festive,Women,83,Apple,Dusky,"Black, Silve",Recommended outfit #23 based on body analysis and style preferences.,83
+24,Suit Collec,suit24.jpg,3099,S,Regular Fit,College,Women,84,Inverted Triangle,Fair,"Maroon, G",Recommended outfit #24 based on body analysis and style preferences.,84
+25,Suit Collec,suit25.jpg,3149,M,Slim Fit,Casual,Women,85,Hourglass,Medium,"Peach, Cre",Recommended outfit #25 based on body analysis and style preferences.,85
+26,Suit Collec,suit26.jpg,3199,L,Tailored Fit,Office,Women,86,Pear,Wheatish,"Emerald, N",Recommended outfit #26 based on body analysis and style preferences.,86
+27,Suit Collec,suit27.jpg,3249,XL,Oversized,Party,Women,87,Rectangle,Dusky,"Black, Silve",Recommended outfit #27 based on body analysis and style preferences.,87
+28,Suit Collec,suit28.jpg,3299,S,Regular Fit,Wedding,Women,88,Apple,Fair,"Maroon, G",Recommended outfit #28 based on body analysis and style preferences.,88
+29,Suit Collec,suit29.jpg,3349,M,Slim Fit,Festive,Women,89,Inverted Triangle,Medium,"Peach, Cre",Recommended outfit #29 based on body analysis and style preferences.,89
+30,Suit Collec,suit30.jpg,3399,L,Tailored Fit,College,Women,90,Hourglass,Wheatish,"Emerald, N",Recommended outfit #30 based on body analysis and style preferences.,90

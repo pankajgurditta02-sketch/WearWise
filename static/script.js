@@ -131,9 +131,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const text = chatInput.value.trim();
             if (!text) return;
             
+            // Add user message
             chatBody.innerHTML += `<div class="chat-msg user">${text}</div>`;
             chatInput.value = '';
             chatBody.scrollTop = chatBody.scrollHeight;
+
+            // Add typing indicator bot message
+            const typingId = 'typing-' + Date.now();
+            chatBody.innerHTML += `
+                <div class="chat-msg bot" id="${typingId}">
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            chatBody.scrollTop = chatBody.scrollHeight;
+
+            const startTime = Date.now();
 
             fetch('/api/chat', {
                 method: 'POST',
@@ -142,8 +158,28 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(res => res.json())
             .then(data => {
-                chatBody.innerHTML += `<div class="chat-msg bot">${data.reply}</div>`;
-                chatBody.scrollTop = chatBody.scrollHeight;
+                const elapsedTime = Date.now() - startTime;
+                const delay = Math.max(0, 1500 - elapsedTime); // Wait at least 1.5 seconds
+                
+                setTimeout(() => {
+                    const typingElement = document.getElementById(typingId);
+                    if (typingElement) {
+                        typingElement.innerHTML = data.reply;
+                    }
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }, delay);
+            })
+            .catch(err => {
+                const elapsedTime = Date.now() - startTime;
+                const delay = Math.max(0, 1500 - elapsedTime);
+                
+                setTimeout(() => {
+                    const typingElement = document.getElementById(typingId);
+                    if (typingElement) {
+                        typingElement.innerHTML = "I apologize, but I am experiencing issues connecting to the styling engine. Please try again shortly.";
+                    }
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }, delay);
             });
         };
         chatBtn.addEventListener('click', sendMessage);
