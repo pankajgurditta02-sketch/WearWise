@@ -1,101 +1,52 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard">
-    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 2rem; margin-bottom: 4rem; position: relative; z-index: 101;" class="reveal">
+<div class="dashboard" style="padding: 8rem 5% 4rem; max-width: 1200px; margin: 0 auto; color: var(--text-main);">
+    
+    <!-- Header -->
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 2rem; margin-bottom: 4rem;" class="reveal">
         <div style="flex: 1; min-width: 300px;">
-            <h1 style="font-size: 3.5rem; color: var(--accent-gold); margin-bottom: 0.5rem; line-height: 1.1;">Analytics Overview</h1>
-            <p style="color: var(--text-muted); font-size: 1.1rem; letter-spacing: 1px;">Skeletal extraction and proportion mapping complete.</p>
+            <h1 style="font-size: 3.5rem; color: var(--accent-gold); margin-bottom: 0.5rem; line-height: 1.1;">Style DNA Profile</h1>
+            <p style="color: var(--text-muted); font-size: 1.1rem; letter-spacing: 1px;">Visual color chemistry and fashion aesthetic mapping complete.</p>
         </div>
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <a href="{{ url_for('generate_pdf') }}" class="btn-outline" style="pointer-events: auto;"><i class="fas fa-file-pdf"></i> Export Report</a>
-            <a href="{{ url_for('recommendations') }}" class="btn-gold" style="pointer-events: auto;">View Collection</a>
-        </div>
-    </div>
-
-    <!-- Top Scores row -->
-    <div class="dash-grid scores-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
-        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Symmetry</div>
-            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['body_symmetry_score'] }}</div>
-        </div>
-        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem; transition-delay: 0.1s;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Style Match</div>
-            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['style_compatibility_score'] }}</div>
-        </div>
-        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem; transition-delay: 0.2s;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Proportions</div>
-            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['proportion_balance_score'] }}</div>
-        </div>
-        <div class="dash-card glass reveal" style="text-align: center; padding: 2rem; transition-delay: 0.3s;">
-            <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.5rem;">Confidence</div>
-            <div style="font-size: 3rem; color: var(--accent-gold); font-weight: 300; font-family: 'Inter', sans-serif;">{{ session['analysis']['analytics_overview']['fashion_confidence_score'] }}</div>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('recommendations') }}" class="btn-gold" style="pointer-events: auto; padding: 1rem 2.5rem; border-radius: 6px;">View Curated Collection</a>
         </div>
     </div>
 
-    <div class="dash-grid">
-        <!-- Visual Column -->
-        <div class="reveal">
-            <div class="dash-card glass" style="text-align: center; margin-bottom: 2rem;">
-                <img src="{{ url_for('static', filename=session['image_path']) }}" alt="Subject" style="width: 100%; border-radius: 8px; margin-bottom: 2rem;">
-                
-                <h3 style="color: var(--text-muted); font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;">Primary Size Prediction</h3>
-                <h1 style="font-size: 5rem; color: var(--accent-gold); margin: 0.5rem 0; line-height: 1;">{{ session['analysis']['size_prediction']['size'] }}</h1>
-                <p style="font-size: 0.9rem; margin-top: 1rem; color: #ddd;">{{ session['analysis']['size_prediction']['reasoning'] }}</p>
-                
-                <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
-                    <p style="font-size: 0.9rem; color: var(--text-muted);">BODY TYPE CLASSIFICATION</p>
-                    <h2 style="font-size: 2rem; color: #fff; margin-bottom: 0.5rem;">{{ session['analysis']['body_type_detection']['type'] }}</h2>
-                    <p style="font-size: 0.8rem; color: var(--accent-gold);">Confidence: {{ session['analysis']['body_type_detection']['confidence'] }}%</p>
-                </div>
+    <!-- Main Content layout -->
+    <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 3rem;" class="reveal">
+        
+        <!-- Left: Image & Stylist Summary -->
+        <div>
+            <!-- Captured Snapshot -->
+            <div class="glass" style="padding: 1.5rem; border-radius: 16px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); margin-bottom: 2rem; text-align: center;">
+                <img src="{{ url_for('static', filename=session['image_path']) }}" alt="Subject" style="width: 100%; border-radius: 10px; object-fit: cover; aspect-ratio: 3/4; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Stylist Scan Target</div>
             </div>
 
-            <!-- Stylist Summary -->
-            <div class="dash-card glass">
-                <h2 style="font-size: 1.2rem; color: var(--accent-gold); margin-bottom: 1rem;"><i class="fas fa-quote-left" style="opacity: 0.5; margin-right: 10px;"></i> Stylist Summary</h2>
-                <p style="line-height: 1.6; color: #e0e0e0;">{{ session['analysis']['fashion_summary'] }}</p>
+            <!-- Stylist Quote -->
+            <div class="glass" style="padding: 2rem; border-radius: 16px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
+                <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--accent-gold); margin-bottom: 1rem;"><i class="fas fa-quote-left" style="opacity: 0.3; margin-right: 8px;"></i> Stylist Summary</h3>
+                <p style="line-height: 1.6; color: var(--text-muted); font-size: 0.95rem; margin: 0;">{{ session['analysis']['fashion_summary'] }}</p>
             </div>
         </div>
 
-        <!-- Data Column -->
+        <!-- Right: DNA & Color AI (no body sizes/shapes) -->
         <div style="display: flex; flex-direction: column; gap: 2rem;">
             
-            <!-- Proportions -->
-            <div class="dash-card glass reveal" style="transition-delay: 0.1s;">
-                <h2>Proportion Metrics</h2>
-                <div class="metric">
-                    <span class="metric-label">Shoulder-to-Hip Ratio</span>
-                    <span class="metric-value">{{ session['analysis']['body_analysis']['shoulder_to_hip_ratio'] }}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Body Height Ratio (Torso/Legs)</span>
-                    <span class="metric-value">{{ session['analysis']['body_analysis']['torso_to_leg_ratio'] }}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Shoulder Width (Normalized)</span>
-                    <span class="metric-value">{{ session['analysis']['body_analysis']['shoulder_width'] }}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Hip Width (Normalized)</span>
-                    <span class="metric-value">{{ session['analysis']['body_analysis']['hip_width'] }}</span>
-                </div>
-                <div class="metric" style="border: none;">
-                    <span class="metric-label">Frame Size</span>
-                    <span class="metric-value">{{ session['analysis']['body_analysis']['frame_size'] }}</span>
-                </div>
-            </div>
-
             <!-- Style DNA -->
-            <div class="dash-card glass reveal" style="transition-delay: 0.2s;">
-                <h2>Style DNA</h2>
-                <div style="margin-top: 1.5rem;">
+            <div class="glass" style="padding: 2.5rem; border-radius: 16px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
+                <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: var(--text-main); margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;"><i class="fas fa-fingerprint" style="color: var(--accent-gold); margin-right: 8px;"></i> Your Style DNA</h3>
+                
+                <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1.2rem;">
                     {% for style, percentage in session['analysis']['style_dna'].items() %}
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem; font-size: 0.9rem;">
-                            <span>{{ style }}</span>
-                            <span style="color: var(--accent-gold);">{{ percentage }}%</span>
+                    <div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.9rem;">
+                            <span style="font-weight: 500;">{{ style }}</span>
+                            <span style="color: var(--accent-gold); font-weight: bold;">{{ percentage }}%</span>
                         </div>
-                        <div style="width: 100%; background: rgba(255,255,255,0.1); border-radius: 4px; height: 6px; overflow: hidden;">
+                        <div style="width: 100%; background: var(--bg-tertiary); border-radius: 4px; height: 6px; overflow: hidden;">
                             <div style="width: {{ percentage }}%; background: var(--accent-gold); height: 100%; border-radius: 4px;"></div>
                         </div>
                     </div>
@@ -103,84 +54,39 @@
                 </div>
             </div>
 
-            <!-- Color AI -->
-            <div class="dash-card glass reveal" style="transition-delay: 0.3s;">
-                <h2>Color Recommendation AI</h2>
+            <!-- Color Recommendation AI -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 16px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
+                <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: var(--text-main); margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;"><i class="fas fa-palette" style="color: var(--accent-gold); margin-right: 8px;"></i> Color Recommendation AI</h3>
                 
                 <div style="margin-top: 1.5rem;">
-                    <h4 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">Best Colors</h4>
-                    <div class="color-swatches" style="margin-bottom: 1.5rem;">
+                    <!-- Best Colors -->
+                    <h4 style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">Complementary Colors</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2rem;">
                         {% for color in session['analysis']['color_analysis']['best'] %}
-                            <span class="swatch" style="border-left: 3px solid #4caf50;">{{ color }}</span>
+                            <span style="background: rgba(46, 204, 113, 0.08); color: #27ae60; border: 1px solid rgba(46, 204, 113, 0.2); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 500;">{{ color }}</span>
                         {% endfor %}
                     </div>
 
-                    <h4 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">Accent Colors</h4>
-                    <div class="color-swatches" style="margin-bottom: 1.5rem;">
+                    <!-- Accent Colors -->
+                    <h4 style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">Accent Colors</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 2rem;">
                         {% for color in session['analysis']['color_analysis']['accent'] %}
-                            <span class="swatch" style="border-left: 3px solid var(--accent-gold);">{{ color }}</span>
+                            <span style="background: rgba(212, 163, 150, 0.1); color: var(--accent-gold); border: 1px solid rgba(212, 163, 150, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 500;">{{ color }}</span>
                         {% endfor %}
                     </div>
 
-                    <h4 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.5rem;">Colors To Avoid</h4>
-                    <div class="color-swatches">
+                    <!-- Avoid Colors -->
+                    <h4 style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">Colors to Avoid</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
                         {% for color in session['analysis']['color_analysis']['avoid'] %}
-                            <span class="swatch" style="border-left: 3px solid #f44336; opacity: 0.7;">{{ color }}</span>
+                            <span style="background: rgba(231, 76, 60, 0.05); color: #c0392b; border: 1px solid rgba(231, 76, 60, 0.15); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; opacity: 0.85;">{{ color }}</span>
                         {% endfor %}
                     </div>
                 </div>
             </div>
 
-            <!-- Best Fit Analysis -->
-            <div class="dash-card glass reveal" style="transition-delay: 0.4s;">
-                <h2>Best Fit Analysis</h2>
-                <div style="margin-top: 1rem;">
-                    <h3 style="font-size: 1.5rem; color: var(--accent-gold); margin-bottom: 0.5rem;">{{ session['analysis']['best_fit_analysis']['fit'] }}</h3>
-                    <p style="color: #ccc; line-height: 1.5;">{{ session['analysis']['best_fit_analysis']['reasoning'] }}</p>
-                </div>
-            </div>
-            
         </div>
-    </div>
 
-    <!-- Lookbooks Section -->
-    <div class="reveal" style="margin-top: 4rem;">
-        <h2 style="font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 3rem; text-align: center; font-family: 'Cormorant Garamond', serif;">Stylist Lookbooks</h2>
-        <div class="lookbooks-grid">
-            {% for outfit in session['analysis']['outfit_recommendations'] %}
-            <div class="lookbook-card glass">
-                <div class="lookbook-header">
-                    <h3 style="font-size: 1.4rem; font-family: 'Inter', sans-serif; font-weight: 600;">{{ outfit.name }}</h3>
-                    <span class="match-badge-inline">{{ outfit.match_score }}% Match</span>
-                </div>
-                <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.6;">{{ outfit.reasoning }}</p>
-                
-                <div class="lookbook-details">
-                    <div class="detail-block">
-                        <span class="detail-label">FIT</span>
-                        <span class="detail-value">{{ outfit.fit_type }}</span>
-                    </div>
-                    <div class="detail-block">
-                        <span class="detail-label">PALETTE</span>
-                        <span class="detail-value">{{ outfit.color_palette | join(' • ') }}</span>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Shop Recommendations Section (CTA) -->
-    <div class="reveal cta-banner-container">
-        <div class="cta-banner glass">
-            <div class="cta-content">
-                <h2 style="font-size: 2.5rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; margin-bottom: 1rem; color: var(--accent-gold);">Your Curated Collection</h2>
-                <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    We have matched your unique size {{ session['analysis']['predicted_size'] }} proportions and style DNA to an exclusive range of premium garments.
-                </p>
-                <a href="{{ url_for('recommendations') }}" class="btn-gold" style="font-size: 1.1rem; padding: 1.2rem 3rem;">View The Collection</a>
-            </div>
-        </div>
     </div>
 
 </div>

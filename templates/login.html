@@ -1,25 +1,40 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding-top: 12rem;">
-    <div class="dash-card glass reveal" style="width: 100%; max-width: 480px; text-align: center; padding: 4rem 3rem; background: rgba(20, 20, 20, 0.7);">
+<div class="dashboard" style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding-top: 12rem; color: var(--text-main);">
+    <div class="dash-card glass reveal" style="width: 100%; max-width: 480px; text-align: center; padding: 4rem 3rem; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: var(--glass-shadow);">
         <i class="fas fa-fingerprint" style="font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 1.5rem; opacity: 0.8;"></i>
-        <h2 style="font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 2.2rem; color: var(--text-main); margin-bottom: 0.5rem;">Admin Access</h2>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 3rem; letter-spacing: 1px; text-transform: uppercase;">Secure Portal (admin/admin)</p>
+        <h2 style="font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 2.2rem; color: var(--text-main); margin-bottom: 0.5rem;">Authenticate</h2>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 3rem; letter-spacing: 1px; text-transform: uppercase;">Secure Portal Access</p>
+        
+        {% if error %}
+            <div style="background: rgba(231,76,60,0.1); color: #e74c3c; border: 1px solid rgba(231,76,60,0.2); padding: 0.8rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1.5rem; text-align: left;">
+                <i class="fas fa-exclamation-circle" style="margin-right: 5px;"></i> {{ error }}
+            </div>
+        {% endif %}
+        {% if success %}
+            <div style="background: rgba(46,204,113,0.1); color: #2ecc71; border: 1px solid rgba(46,204,113,0.2); padding: 0.8rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1.5rem; text-align: left;">
+                <i class="fas fa-check-circle" style="margin-right: 5px;"></i> {{ success }}
+            </div>
+        {% endif %}
         
         <form action="{{ url_for('login') }}" method="post" style="text-align: left;">
             <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label style="display: block; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; font-weight: 500;">Username</label>
-                <input type="text" name="username" class="form-control" placeholder="Enter your username" required style="background: rgba(10,10,10,0.6); padding: 1.2rem; font-size: 1rem;">
+                <input type="text" name="username" class="form-control" placeholder="Enter your username" required style="background: var(--bg-main); border: 1px solid var(--glass-border); padding: 1rem; font-size: 1rem; border-radius: 6px; color: var(--text-main); outline: none;">
             </div>
             <div class="form-group" style="margin-bottom: 2.5rem;">
                 <label style="display: block; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; font-weight: 500;">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="••••••••" required style="background: rgba(10,10,10,0.6); padding: 1.2rem; font-size: 1rem; letter-spacing: 3px;">
+                <input type="password" name="password" class="form-control" placeholder="••••••••" required style="background: var(--bg-main); border: 1px solid var(--glass-border); padding: 1rem; font-size: 1rem; letter-spacing: 3px; border-radius: 6px; color: var(--text-main); outline: none;">
             </div>
-            <button type="submit" class="btn-gold" style="width: 100%; padding: 1.2rem; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <i class="fas fa-lock"></i> Authenticate
+            <button type="submit" class="btn-gold" style="width: 100%; padding: 1.2rem; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 10px; border-radius: 6px; margin-bottom: 1.5rem;">
+                <i class="fas fa-lock"></i> Login
             </button>
         </form>
+        
+        <p style="font-size: 0.88rem; color: var(--text-muted);">
+            New here? <a href="{{ url_for('register') }}" style="color: var(--accent-gold); text-decoration: none; font-weight: bold;">Create an account</a>
+        </p>
     </div>
 </div>
 {% endblock %}

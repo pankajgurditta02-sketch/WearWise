@@ -3,31 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WearWise AI | Luxury AI Styling</title>
+    <title>WearWise AI | Your Style, Our Intelligence</title>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=1.5">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
-    <!-- Navigation -->
-    <nav class="{% if request.path != '/' %}nav-inner-page{% endif %}">
-        <a href="{{ url_for('index') }}" class="logo" style="display: flex; align-items: center;">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="WearWise AI" class="animated-logo">
+    <!-- Navigation Header -->
+    <nav class="{% if request.path != '/' %}nav-inner-page{% endif %}" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 5%; background: var(--bg-secondary); border-bottom: 1px solid var(--glass-border);">
+        <!-- Logo (New rose-gold high-resolution logo) -->
+        <a href="{{ url_for('index') }}" class="logo" style="display: flex; align-items: center; text-decoration: none;">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="WearWise AI" class="animated-logo" style="height: 120px; width: auto; object-fit: contain;">
         </a>
-        <div class="nav-links">
-            <a href="{{ url_for('index') }}">Experience</a>
-            {% if session.get('analysis') %}
-                <a href="{{ url_for('result') }}">Analytics</a>
-                <a href="{{ url_for('recommendations') }}">Collection</a>
-            {% endif %}
+
+        <!-- Clean Simplified Center links -->
+        <div class="nav-links" style="display: flex; gap: 2.5rem; align-items: center;">
+            <a href="{{ url_for('index') }}" style="font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Home</a>
+            <a href="{{ url_for('recommendations') }}" style="font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Collection</a>
+            <a href="{{ url_for('tryon') }}" style="font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Virtual Try-On</a>
+        </div>
+
+        <!-- Right Icons / Actions -->
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <!-- Theme Toggle Icon Button -->
+            <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme" style="background: none; border: none; color: var(--text-main); font-size: 1.15rem; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: var(--transition-smooth);">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+
+            <!-- Shopping Bag Icon with badge -->
+            <a href="#" onclick="openCartModal(event)" style="color: var(--text-main); font-size: 1.05rem; position: relative; opacity: 0.85; text-decoration: none;">
+                <i class="fas fa-shopping-bag"></i>
+                <span id="globalCartCount" style="position: absolute; top: -6px; right: -8px; background: var(--accent-gold); color: #fff; font-size: 0.6rem; font-weight: bold; width: 15px; height: 15px; border-radius: 50%; display: {% if cart_count > 0 %}flex{% else %}none{% endif %}; align-items: center; justify-content: center;">{{ cart_count }}</span>
+            </a>
+
+            <!-- Auth Buttons -->
             {% if session.get('admin') %}
-                <a href="{{ url_for('admin') }}">Dashboard</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
+                <a href="{{ url_for('admin') }}" class="btn-gold" style="padding: 0.5rem 1.4rem; font-size: 0.75rem; border-radius: 8px;"><i class="fas fa-th-large" style="margin-right: 5px;"></i> Dashboard</a>
+                <a href="{{ url_for('logout') }}" style="color: var(--text-main); text-decoration: none; font-size: 0.78rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">Logout</a>
+            {% elif session.get('username') %}
+                <span style="color: var(--text-muted); font-size: 0.78rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 5px;"><i class="fas fa-user" style="color: var(--accent-gold);"></i> {{ session.username }}</span>
+                <a href="{{ url_for('logout') }}" style="color: var(--text-main); text-decoration: none; font-size: 0.78rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">Logout</a>
             {% else %}
-                <a href="{{ url_for('login') }}">Admin</a>
+                <a href="{{ url_for('login') }}" class="btn-gold" style="padding: 0.5rem 1.4rem; font-size: 0.75rem; border-radius: 8px;"><i class="fas fa-sign-in-alt" style="margin-right: 5px;"></i> Login</a>
             {% endif %}
         </div>
     </nav>
@@ -37,44 +65,102 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- AI Loading Screen Overlay -->
-    <div id="loadingScreen">
-        <h2 style="color: var(--accent-gold); margin-bottom: 2rem; letter-spacing: 3px;">INITIALIZING AI VISION</h2>
-        <div class="scanner-box">
-            <!-- Silhouette placeholder -->
-            <div style="width: 100%; height: 100%; background: rgba(255,255,255,0.05); display: flex; align-items:center; justify-content:center;">
-                <i class="fas fa-user" style="font-size: 8rem; color: rgba(255,255,255,0.1);"></i>
+    <!-- Toast Notification container -->
+    <div id="toastContainer" style="position: fixed; bottom: 30px; left: 30px; z-index: 11000; display: flex; flex-direction: column; gap: 10px;"></div>
+
+    <!-- Slide-out Shopping Cart Modal -->
+    <div id="cartModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10,10,10,0.5); backdrop-filter: blur(8px); z-index: 10050; justify-content: flex-end;" onclick="if(event.target == this) closeCartModal()">
+        <div class="glass" style="width: 100%; max-width: 480px; height: 100%; background: var(--bg-secondary); border-left: 1px solid var(--glass-border); padding: 3rem 2rem; display: flex; flex-direction: column; justify-content: space-between; overflow-y: auto; box-shadow: var(--glass-shadow); border-radius: 0;">
+            
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.5rem; margin-bottom: 2rem;">
+                    <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 2rem; color: var(--text-main); margin: 0;"><i class="fas fa-shopping-bag" style="color: var(--accent-gold); margin-right: 10px;"></i>Your Bag</h2>
+                    <button onclick="closeCartModal()" style="background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);"><i class="fas fa-times"></i></button>
+                </div>
+
+                <!-- Cart Items List -->
+                <div id="cartItemsList" style="display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2rem;">
+                    <p style="color: var(--text-muted); text-align: center;">Your bag is currently empty.</p>
+                </div>
             </div>
-            <div class="scanner-line"></div>
+
+            <!-- Checkout form -->
+            <div id="cartCheckoutForm" style="display: none; border-top: 1px solid var(--glass-border); padding-top: 1.5rem;">
+                <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; color: var(--accent-gold); margin-bottom: 1.2rem;">Complete Order</h3>
+                <form onsubmit="submitCheckout(event)">
+                    <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
+                        <input type="text" id="cartCustName" placeholder="Full Name" required style="width: 100%; padding: 0.8rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-main); outline: none;">
+                        <input type="email" id="cartCustEmail" placeholder="Email Address" required style="width: 100%; padding: 0.8rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-main); outline: none;">
+                        <input type="tel" id="cartCustPhone" placeholder="Phone Number" required style="width: 100%; padding: 0.8rem; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-main); outline: none;">
+                    </div>
+                    <button type="submit" class="btn-gold" style="width: 100%; padding: 1rem; border-radius: 6px; font-weight: bold; border: none; letter-spacing: 1px;">Confirm Checkout</button>
+                </form>
+            </div>
+
+            <div id="cartEmptyActions" style="text-align: center;">
+                <a href="{{ url_for('recommendations') }}" class="btn-gold" style="width: 100%; text-align: center; border-radius: 6px;" onclick="closeCartModal()">Shop Collection</a>
+            </div>
+
+            <!-- Checkout Success View (Hidden initially) -->
+            <div id="checkoutSuccessView" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 3rem 1rem; margin: auto 0;">
+                <div class="success-checkmark-wrapper" style="margin-bottom: 2rem; position: relative; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center;">
+                    <div class="pulse-ring"></div>
+                    <svg class="checkmark-svg" viewBox="0 0 52 52" style="width: 80px; height: 80px;">
+                        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                    </svg>
+                </div>
+                <h3 style="color: var(--accent-gold); font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 0.8rem; font-weight: 700; letter-spacing: 1px;">ORDER COMPLETED</h3>
+                <p style="color: var(--text-main); font-size: 0.95rem; font-weight: 300; line-height: 1.5; max-width: 280px; margin: 0 auto 1.5rem;">Your luxury style coordinates have been secured and scheduled for dispatch.</p>
+            </div>
+
         </div>
-        <p style="color: var(--text-muted); font-size: 0.9rem; letter-spacing: 1px;">Extracting Keypoints & Ratios...</p>
     </div>
 
-    <!-- Floating Chatbot Bubble -->
+    <!-- Simplified Clean Footer -->
+    <footer style="background: var(--bg-secondary); border-top: 1px solid rgba(217, 84, 115, 0.1); padding: 4rem 10% 2rem; color: var(--text-muted); font-size: 0.85rem;">
+        <div style="max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 3rem; flex-wrap: wrap; margin-bottom: 3rem;">
+            <!-- Signature branding -->
+            <div>
+                <a href="#" style="display: flex; align-items: center; text-decoration: none; margin-bottom: 1rem;">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="WearWise AI" style="height: 80px; width: auto;">
+                </a>
+                <p style="line-height: 1.6; max-width: 320px;">Elevate your fashion with state-of-the-art vision color matching and live stylist recommendation networks.</p>
+            </div>
+
+            <!-- Social and Contact -->
+            <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-end;">
+                <h4 style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Stay Connected</h4>
+                <div style="display: flex; gap: 1rem; font-size: 1.2rem;">
+                    <a href="#" style="color: var(--text-muted);"><i class="fab fa-instagram"></i></a>
+                    <a href="#" style="color: var(--text-muted);"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" style="color: var(--text-muted);"><i class="fab fa-twitter"></i></a>
+                    <a href="#" style="color: var(--text-muted);"><i class="fab fa-pinterest"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fine print developed credits footer -->
+        <div style="border-top: 1px solid rgba(217, 84, 115, 0.1); padding-top: 2rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+            <p style="margin: 0;">&copy; 2026 WearWise. All rights reserved.</p>
+            <p style="margin: 0; letter-spacing: 1.2px; text-transform: uppercase; font-size: 0.78rem;">
+                Developed By: <strong style="color: var(--text-main);">Pankaj • Dishika • Abhinav • Bhupesh</strong>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Chatbot Toggle (Preserved) -->
     <div class="chatbot-bubble" id="chatbotBubble">
         <i class="fas fa-comment-dots"></i>
     </div>
 
-    <!-- Chatbot Window -->
+    <!-- Chatbot Window (Preserved) -->
     <div class="chatbot-window glass" id="chatbotWindow">
         <div style="padding: 1rem; border-bottom: 1px solid var(--glass-border); text-align: center; font-family: 'Inter', sans-serif; font-weight: 600; color: var(--accent-gold);">
             Virtual Stylist
         </div>
         <div class="chat-body" id="chatBody">
             <div class="chat-msg bot">Welcome to WearWise. How can I assist with your styling today?</div>
-            <div style="margin: 0.5rem 0; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Suggested Queries:</div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('What is my best suited wedding outfit?')">What is my best suited wedding outfit?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('Which color palette fits my skin tone best?')">Which color palette fits my skin tone best?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('How does the AI determine my body type?')">How does the AI determine my body type?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('What styling mistake should I avoid for my silhouette?')">What styling mistake should I avoid for my silhouette?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('Can you recommend a casual suit for a weekend brunch?')">Can you recommend a casual suit for a weekend brunch?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('What are the latest fashion trends for this season?')">What are the latest fashion trends for this season?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('How should I dress for a professional executive meeting?')">How should I dress for a professional executive meeting?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('Which outfit is recommended for a campus presentation?')">Which outfit is recommended for a campus presentation?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('How do I choose the correct size for custom luxury suits?')">How do I choose the correct size for custom luxury suits?</button>
-                <button class="prompt-chip" style="background: rgba(230, 194, 122, 0.03); border: 1px solid rgba(230, 194, 122, 0.15); color: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.75rem; text-align: left; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif;" onclick="sendPrompt('What makes WearWise different from other styling tools?')">What makes WearWise different from other styling tools?</button>
-            </div>
         </div>
         <div class="chat-input-area">
             <input type="text" id="chatInput" placeholder="Ask about fits, colors...">
@@ -84,5 +170,204 @@
 
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <!-- Global Cart Scripts -->
+    <script>
+    let localCart = [];
+
+    // Toast notification
+    function showToast(message) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'glass';
+        toast.style.cssText = `
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-left: 4px solid var(--accent-gold);
+            color: var(--text-main);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: var(--glass-shadow);
+        `;
+        toast.innerHTML = `<i class="fas fa-check-circle" style="color: var(--accent-gold);"></i> <span>${message}</span>`;
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            toast.style.transition = "opacity 0.5s ease";
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
+    // Add To Bag API Call
+    function addToCart(productId, productName, size) {
+        fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId, size: size })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // Update badge
+                const badge = document.getElementById('globalCartCount');
+                badge.innerText = data.cart_count;
+                badge.style.display = 'flex';
+                badge.style.transform = 'scale(1.2)';
+                setTimeout(() => badge.style.transform = 'scale(1)', 300);
+                
+                showToast(`Added ${productName} (Size: ${size}) to Bag!`);
+                
+                // Track item locally
+                localCart.push({ id: productId, name: productName, size: size });
+            }
+        });
+    }
+
+    function openCartModal(e) {
+        if(e) e.preventDefault();
+        
+        // Reset modal layout views
+        const modalInnerChild = document.querySelector('#cartModal > div > div:first-child');
+        if (modalInnerChild) modalInnerChild.style.display = 'block';
+        document.getElementById('checkoutSuccessView').style.display = 'none';
+        
+        document.getElementById('cartModal').style.display = 'flex';
+        renderCartItems();
+    }
+
+    function closeCartModal() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function renderCartItems() {
+        const itemsList = document.getElementById('cartItemsList');
+        const checkoutForm = document.getElementById('cartCheckoutForm');
+        const emptyActions = document.getElementById('cartEmptyActions');
+        
+        if (localCart.length === 0) {
+            itemsList.innerHTML = `<p style="color: var(--text-muted); text-align: center; padding: 2rem 0;">Your Bag is empty.</p>`;
+            checkoutForm.style.display = 'none';
+            emptyActions.style.display = 'block';
+        } else {
+            itemsList.innerHTML = localCart.map((item, idx) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                    <div>
+                        <h4 style="color: var(--text-main); font-weight: 600; margin-bottom: 2px;">${item.name}</h4>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Size: ${item.size}</span>
+                    </div>
+                    <button onclick="removeCartItem(${idx})" style="background: transparent; border: none; color: #ff6b6b; cursor: pointer;"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `).join('');
+            checkoutForm.style.display = 'block';
+            emptyActions.style.display = 'none';
+        }
+    }
+
+    function removeCartItem(index) {
+        localCart.splice(index, 1);
+        
+        // Sync with session by clearing and re-adding if necessary
+        fetch('/api/cart/clear', { method: 'POST' }).then(() => {
+            if (localCart.length === 0) {
+                const badge = document.getElementById('globalCartCount');
+                badge.style.display = 'none';
+                renderCartItems();
+                return;
+            }
+            
+            // Re-add remaining
+            let promises = localCart.map(item => 
+                fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: item.id, size: item.size })
+                })
+            );
+            
+            Promise.all(promises).then(() => {
+                const badge = document.getElementById('globalCartCount');
+                badge.innerText = localCart.length;
+                renderCartItems();
+            });
+        });
+    }
+
+    function submitCheckout(e) {
+        e.preventDefault();
+        const payload = {
+            name: document.getElementById('cartCustName').value,
+            email: document.getElementById('cartCustEmail').value,
+            phone: document.getElementById('cartCustPhone').value
+        };
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const origText = submitBtn.innerText;
+        submitBtn.disabled = true;
+        submitBtn.innerText = "PROCESSING...";
+
+        fetch('/api/cart/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                localCart = [];
+                const badge = document.getElementById('globalCartCount');
+                badge.style.display = 'none';
+                
+                // Trigger success checkmark animation inside modal
+                const modalInnerChild = document.querySelector('#cartModal > div > div:first-child');
+                if (modalInnerChild) modalInnerChild.style.display = 'none';
+                document.getElementById('cartCheckoutForm').style.display = 'none';
+                document.getElementById('checkoutSuccessView').style.display = 'flex';
+                
+                setTimeout(() => {
+                    // Hide success view, restore form for next checkout, and close modal
+                    document.getElementById('checkoutSuccessView').style.display = 'none';
+                    if (modalInnerChild) modalInnerChild.style.display = 'block';
+                    document.getElementById('cartCheckoutForm').style.display = 'none';
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = origText;
+                    closeCartModal();
+                }, 4000);
+                
+            } else {
+                alert(data.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = origText;
+            }
+        });
+    }
+    
+    // Dark mode supporting logic
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-mode');
+        document.documentElement.classList.toggle('dark-mode', isDark);
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {
+            themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Sync body class and icon with head detection
+        const isDark = document.documentElement.classList.contains('dark-mode');
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+        }
+        const themeIcon = document.getElementById('themeIcon');
+        if (themeIcon) {
+            themeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+    });
+    </script>
 </body>
 </html>

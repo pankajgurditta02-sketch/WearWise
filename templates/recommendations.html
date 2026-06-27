@@ -1,342 +1,198 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="padding: 8rem 5% 4rem; max-width: 1400px; margin: 0 auto;">
+<div style="padding: 12rem 5% 4rem; max-width: 1400px; margin: 0 auto;">
+    
+    <!-- Title -->
     <div style="text-align: center; margin-bottom: 5rem;" class="reveal">
-        <h1 style="font-size: 3rem;">The Collection</h1>
-        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Curated selections based on your {{ session['analysis']['body_type'] }} body architecture and size {{ session['analysis']['predicted_size'] }} dimensions.</p>
+        <h1 style="font-size: 3rem; color: var(--accent-gold);">Recommended Collection</h1>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Curated selections based on your style scan and color compatibility.</p>
     </div>
 
-
-
-    <!-- Recommended Products from Database -->
-    <h2 style="margin: 5rem 0 2rem; font-size: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;" class="reveal">Shop Recommended Fits</h2>
-    
-    {% if products %}
+    <!-- Product Grid -->
     <div class="premium-product-grid">
         {% for p in products %}
-        <div class="premium-card reveal" style="transition-delay: {{ loop.index0 * 0.05 }}s;">
-            <div class="card-image-wrapper">
-                <img src="{{ url_for('static', filename='products/' ~ p.image) }}" alt="{{ p.name }}" onerror="this.src='https://source.unsplash.com/random/400x600/?suit,luxury'">
-                <div class="match-badge">{{ p.style_match }}% Match</div>
-                <div class="style-badge">{{ p.fit }}</div>
+        <div class="premium-card reveal" style="transition-delay: {{ loop.index0 * 0.05 }}s; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden; box-shadow: var(--glass-shadow);">
+            
+            <!-- Image (NO match badges or fit badges) -->
+            <div class="card-image-wrapper" style="height: 380px; overflow: hidden; position: relative;">
+                <img src="{{ url_for('static', filename='products/' ~ p.image) }}" alt="{{ p.name }}" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
-            <div class="card-content">
-                <div class="card-header">
-                    <h3>{{ p.name }}</h3>
-                    <span class="price-badge">₹{{ p.price }}</span>
+
+            <!-- Content -->
+            <div class="card-content" style="padding: 1.8rem; display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
+                
+                <div>
+                    <!-- Header -->
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <h3 style="font-size: 1.4rem; color: var(--text-main); font-family: 'Cormorant Garamond', serif; font-weight: 700; margin: 0;">{{ p.name }}</h3>
+                        <span class="price-badge" style="color: var(--accent-gold); font-size: 1.3rem; font-weight: 600;">₹{{ p.price }}</span>
+                    </div>
+                    <p class="card-category" style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1rem;">{{ p.category }} • {{ p.gender }}</p>
+                    
+                    <!-- Description -->
+                    <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.5rem; border-left: 2px solid var(--accent-gold); padding-left: 0.8rem;">
+                        {{ p.description }}
+                    </p>
+
+                    <!-- Sizes Display -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: bold; letter-spacing: 1px; text-transform: uppercase; display: block; margin-bottom: 0.4rem;">Available Sizes:</span>
+                        <div style="font-size: 0.9rem; color: var(--text-main); font-weight: 500;">
+                            {% set sizes_list = p.available_sizes.split(',') %}
+                            {% for size in sizes_list %}
+                                <span style="display: inline-block; background: var(--bg-tertiary); border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; margin-right: 4px;">{{ size.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Reviews Summary -->
+                    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 8px;">
+                        <div style="color: var(--accent-gold); font-size: 0.95rem;">
+                            {% set rating_int = p.avg_rating | int %}
+                            {% for i in range(5) %}
+                                {% if i < rating_int %}
+                                    ★
+                                {% else %}
+                                    ☆
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <span style="font-size: 0.82rem; color: var(--text-main); font-weight: 600;">{{ p.avg_rating }} / 5.0</span>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">({{ p.review_count }} reviews)</span>
+                    </div>
                 </div>
-                <p class="card-category">{{ p.category }}</p>
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.4; border-left: 2px solid var(--accent-gold); padding-left: 0.8rem;">
-                    {{ p.description }}
-                </p>
-                <div style="font-size: 0.78rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; gap: 6px; color: var(--text-muted);">
-                    <span style="border: 1px solid var(--glass-border); padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.02);"><i class="fas fa-child" style="color: var(--accent-gold); margin-right: 4px;"></i>{{ p.body_type }}</span>
-                    <span style="border: 1px solid var(--glass-border); padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.02);"><i class="fas fa-palette" style="color: var(--accent-gold); margin-right: 4px;"></i>{{ p.skin_tone }}</span>
+
+                <!-- Footer Actions -->
+                <div style="border-top: 1px solid var(--glass-border); padding-top: 1.5rem; margin-top: auto;">
+                    <!-- Size selector pill buttons next to Add To Cart -->
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.2rem;">
+                        <label style="font-size: 0.72rem; color: var(--text-muted); font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">Select Size</label>
+                        <div style="display: flex; gap: 6px;" id="size-selector-{{ p.id }}">
+                            {% for size in sizes_list %}
+                                <label style="cursor: pointer; position: relative;">
+                                    <input type="radio" name="size-select-{{ p.id }}" value="{{ size.strip() }}" {% if loop.first %}checked{% endif %} style="position: absolute; opacity: 0; width: 0; height: 0;">
+                                    <span class="size-pill" style="display: inline-block; padding: 4px 12px; border: 1px solid var(--glass-border); border-radius: 6px; font-size: 0.8rem; font-weight: bold; background: var(--bg-secondary); color: var(--text-muted); transition: all 0.3s;">{{ size.strip() }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Add to Cart (Replaces View Details) -->
+                    <button class="btn-gold" style="width: 100%; border-radius: 6px; padding: 0.8rem; font-size: 0.88rem; display: flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: 1px;" 
+                            onclick="handleAddToCartClick({{ p.id }}, '{{ p.name }}')">
+                        <i class="fas fa-shopping-cart"></i> Add To Cart
+                    </button>
+                    
+                    <!-- Collapsible Reviews List link -->
+                    <button onclick="toggleReviews({{ p.id }})" style="background: transparent; border: none; color: var(--accent-gold); width: 100%; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-top: 1.2rem; cursor: pointer;">
+                        <i class="fas fa-comments"></i> Customer Reviews
+                    </button>
                 </div>
-                <div class="card-footer">
-                    <span class="size-indicator">Size: {{ p.size }}</span>
-                    <button class="btn-outline btn-sm" style="padding: 0.5rem 1rem; font-size: 0.8rem;" onclick="openProductModal('{{ p.name }}', '{{ p.image }}', '{{ p.price }}', '{{ p.style_match }}', '{{ p.fit }}', '{{ p.category }}', '{{ p.body_type }}', '{{ p.skin_tone }}', '{{ p.recommer }}', '{{ p.description }}')">View Details</button>
+
+            </div>
+
+            <!-- Reviews Collapsible Panel -->
+            <div id="reviews-panel-{{ p.id }}" style="display: none; border-top: 1px solid var(--glass-border); padding: 1.5rem; background: var(--bg-tertiary);">
+                <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin-bottom: 1rem; color: var(--text-main);">Reviews ({{ p.review_count }})</h4>
+                
+                <!-- List -->
+                <div style="display: flex; flex-direction: column; gap: 1rem; max-height: 200px; overflow-y: auto; margin-bottom: 1.5rem; padding-right: 5px;">
+                    {% if p.reviews %}
+                        {% for r in p.reviews %}
+                        <div style="border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 0.8rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                <strong style="font-size: 0.85rem; color: var(--text-main);">{{ r.user_name }}</strong>
+                                <span style="font-size: 0.7rem; color: var(--text-muted);">{{ r.timestamp[:10] }}</span>
+                            </div>
+                            <div style="color: var(--accent-gold); font-size: 0.75rem; margin-bottom: 4px;">
+                                {% for star in range(r.rating) %}★{% endfor %}{% for star in range(5 - r.rating) %}☆{% endfor %}
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">{{ r.comment }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">No reviews yet. Be the first to review!</p>
+                    {% endif %}
+                </div>
+
+                <!-- Add Review Form -->
+                <div style="border-top: 1px dashed var(--glass-border); padding-top: 1rem;">
+                    <h5 style="font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--text-main);">Write a Review</h5>
+                    <form onsubmit="submitReview(event, {{ p.id }})">
+                        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                            <input type="text" placeholder="Your Name" required class="review-name-input" style="flex: 1; padding: 0.4rem; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 4px; color: var(--text-main); font-size: 0.8rem; outline: none;">
+                            <select class="review-rating-select" style="padding: 0.4rem; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 4px; color: var(--text-main); font-size: 0.8rem; outline: none;">
+                                <option value="5">5 Stars</option>
+                                <option value="4">4 Stars</option>
+                                <option value="3">3 Stars</option>
+                                <option value="2">2 Stars</option>
+                                <option value="1">1 Star</option>
+                            </select>
+                        </div>
+                        <textarea placeholder="Write review comment..." required class="review-comment-textarea" style="width: 100%; padding: 0.5rem; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 4px; color: var(--text-main); font-size: 0.8rem; height: 50px; outline: none; margin-bottom: 8px; resize: none;"></textarea>
+                        <button type="submit" class="btn-gold" style="padding: 4px 12px; font-size: 0.72rem; border-radius: 4px;">Submit</button>
+                    </form>
                 </div>
             </div>
+
         </div>
         {% endfor %}
     </div>
-    {% else %}
-    <div class="glass" style="padding: 4rem; text-align: center;">
-        <p style="color: var(--text-muted); font-size: 1.2rem;">Our inventory is currently updating. Please check back later for specific product matches.</p>
-    </div>
-    {% endif %}
-</div>
 
-<!-- Premium Product Details Modal -->
-<div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(8px); z-index: 10000; justify-content: center; align-items: center; padding: 2rem;" onclick="if(event.target == this) closeProductModal()">
-    <div class="glass" style="max-width: 800px; width: 100%; background: rgba(15, 15, 15, 0.95); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; display: flex; flex-wrap: wrap; position: relative; box-shadow: var(--glass-shadow);">
-        <!-- Close Button -->
-        <button onclick="closeProductModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer; z-index: 10;"><i class="fas fa-times"></i></button>
-        
-        <!-- Left Side: Image -->
-        <div style="flex: 1; min-width: 300px; height: 450px; overflow: hidden; position: relative;">
-            <img id="modalProductImg" src="" alt="" style="width: 100%; height: 100%; object-fit: cover;">
-            <div id="modalProductMatch" class="match-badge" style="position: absolute; top: 1rem; left: 1rem; background: rgba(10, 10, 10, 0.85); color: var(--accent-gold); padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; font-size: 0.8rem; border: 1px solid rgba(230, 194, 122, 0.3);"></div>
-        </div>
-        
-        <!-- Right Side: Details -->
-        <div id="modalDetailsView" style="flex: 1.2; min-width: 320px; padding: 3rem; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <span id="modalProductCategory" style="color: var(--accent-gold); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;"></span>
-                <h2 id="modalProductName" style="font-size: 2.2rem; margin: 0.5rem 0 1rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; color: #fff;"></h2>
-                <div style="font-size: 1.5rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 1.5rem;" id="modalProductPrice"></div>
-                
-                <p id="modalProductDesc" style="color: #ccc; font-size: 0.9rem; line-height: 1.6; margin-bottom: 2rem; border-left: 2px solid var(--accent-gold); padding-left: 1rem;"></p>
-                
-                <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
-                        <span style="color: var(--text-muted);">SUGGESTED FIT</span>
-                        <span id="modalProductFit" style="color: #fff; font-weight: 500;"></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
-                        <span style="color: var(--text-muted);">BODY TYPE SUITABILITY</span>
-                        <span id="modalProductBody" style="color: #fff; font-weight: 500;"></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
-                        <span style="color: var(--text-muted);">SKIN TONE PAIRING</span>
-                        <span id="modalProductTone" style="color: #fff; font-weight: 500;"></span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; padding-bottom: 0.4rem;">
-                        <span style="color: var(--text-muted);">RECOMMENDED ACCENTS</span>
-                        <span id="modalProductAccents" style="color: var(--accent-gold); font-weight: 500;"></span>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn-gold" style="width: 100%; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showFormView()">Reserve Fit</button>
-            </div>
-        </div>
-
-        <!-- Right Side: Reservation Form -->
-        <div id="modalFormView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: space-between;">
-            <div>
-                <h3 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600;">Custom Fit Reservation</h3>
-                <form id="reservationForm" onsubmit="submitReservation(event)">
-                    <input type="hidden" id="reserveSuitName">
-                    <input type="hidden" id="reserveSuitPrice">
-                    
-                    <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
-                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">YOUR FULL NAME</label>
-                            <input type="text" id="reserveName" required style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">EMAIL ADDRESS</label>
-                            <input type="email" id="reserveEmail" required style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">PHONE NUMBER</label>
-                            <input type="tel" id="reservePhone" required style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                        </div>
-                        
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">BUST (INCHES)</label>
-                                <input type="text" id="reserveBust" placeholder="e.g. 34" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">WAIST (INCHES)</label>
-                                <input type="text" id="reserveWaist" placeholder="e.g. 28" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">HIPS (INCHES)</label>
-                                <input type="text" id="reserveHips" placeholder="e.g. 38" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                            </div>
-                            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                                <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">HEIGHT (CM)</label>
-                                <input type="text" id="reserveHeight" placeholder="e.g. 165" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem;">
-                        <button type="submit" class="btn-gold" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;">Submit Order</button>
-                        <button type="button" class="btn-outline" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showDetailsView()">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Right Side: Reservation Success Animation -->
-        <div id="modalSuccessView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-            <div class="success-checkmark-wrapper" style="margin-bottom: 2rem; position: relative; width: 100px; height: 100px;">
-                <!-- Pulsing glowing rings -->
-                <div class="pulse-ring"></div>
-                <!-- Drawing SVG Checkmark -->
-                <svg class="checkmark-svg" viewBox="0 0 52 52">
-                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                </svg>
-            </div>
-            <h3 style="color: var(--accent-gold); font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600; letter-spacing: 1px; animation: fadeInUp 0.6s ease-out 0.8s both;">MEASUREMENTS SECURED</h3>
-            <p style="color: #fff; font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 280px; font-weight: 300; line-height: 1.5; animation: fadeInUp 0.6s ease-out 1s both;">Your custom fit order has been successfully transmitted to our stylist command center.</p>
-            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; animation: fadeInUp 0.6s ease-out 1.2s both;">Transmission Complete</div>
-        </div>
-    </div>
 </div>
 
 <style>
-.pulse-ring {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    border: 2px solid var(--accent-gold);
-    border-radius: 50%;
-    animation: pulseRing 1.5s infinite ease-in-out;
-}
-.checkmark-svg {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    display: block;
-    stroke-width: 3;
-    stroke: var(--accent-gold);
-    stroke-miterlimit: 10;
-    box-shadow: inset 0px 0px 0px var(--accent-gold);
-    animation: fillCheckmark .4s ease-in-out .4s forwards, scaleCheckmark .3s ease-in-out .9s alternate both;
-}
-.checkmark-circle {
-    stroke-dasharray: 166;
-    stroke-dashoffset: 166;
-    stroke-width: 3;
-    stroke-miterlimit: 10;
-    stroke: var(--accent-gold);
-    fill: none;
-    animation: strokeCircle .6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
-}
-.checkmark-check {
-    stroke-dasharray: 48;
-    stroke-dashoffset: 48;
-    stroke-width: 4;
-    stroke-linecap: round;
-    animation: strokeCheck .3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
-}
-
-@keyframes pulseRing {
-    0% {
-        transform: scale(0.6);
-        opacity: 0;
-    }
-    50% {
-        opacity: 0.5;
-    }
-    100% {
-        transform: scale(1.3);
-        opacity: 0;
-    }
-}
-@keyframes strokeCircle {
-    to {
-        stroke-dashoffset: 0;
-    }
-}
-@keyframes strokeCheck {
-    to {
-        stroke-dashoffset: 0;
-    }
-}
-@keyframes fillCheckmark {
-    to {
-        box-shadow: inset 0px 0px 0px 50px rgba(212, 175, 55, 0.05);
-    }
-}
-@keyframes scaleCheckmark {
-    0%, 100% {
-        transform: none;
-    }
-    50% {
-        transform: scale3d(1.1, 1.1, 1);
-    }
-}
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(15px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Custom radio size selector pill styles */
+input[type="radio"]:checked + .size-pill {
+    background: var(--accent-gold) !important;
+    border-color: var(--accent-gold) !important;
+    color: #fff !important;
+    transform: scale(1.05);
 }
 </style>
 
 <script>
-function openProductModal(name, img, price, match, fit, cat, body, tone, accents, desc) {
-    document.getElementById('modalProductName').innerText = name;
-    document.getElementById('modalProductImg').src = "{{ url_for('static', filename='products/') }}" + img;
-    document.getElementById('modalProductPrice').innerText = '₹' + price;
-    document.getElementById('modalProductMatch').innerText = match + '% Match';
-    document.getElementById('modalProductFit').innerText = fit;
-    document.getElementById('modalProductCategory').innerText = cat;
-    document.getElementById('modalProductBody').innerText = body;
-    document.getElementById('modalProductTone').innerText = tone;
-    document.getElementById('modalProductAccents').innerText = accents;
-    document.getElementById('modalProductDesc').innerText = desc;
-    
-    // Populate hidden inputs
-    document.getElementById('reserveSuitName').value = name;
-    document.getElementById('reserveSuitPrice').value = price;
-    
-    showDetailsView();
-    document.getElementById('productModal').style.display = 'flex';
+function toggleReviews(productId) {
+    const panel = document.getElementById(`reviews-panel-${productId}`);
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
 
-function closeProductModal() {
-    document.getElementById('productModal').style.display = 'none';
+function handleAddToCartClick(productId, productName) {
+    const selectedRadio = document.querySelector(`input[name="size-select-${productId}"]:checked`);
+    const size = selectedRadio ? selectedRadio.value : 'M';
+    addToCart(productId, productName, size);
 }
 
-function showFormView() {
-    document.getElementById('modalDetailsView').style.display = 'none';
-    document.getElementById('modalSuccessView').style.display = 'none';
-    document.getElementById('modalFormView').style.display = 'flex';
-}
-
-function showDetailsView() {
-    document.getElementById('modalFormView').style.display = 'none';
-    document.getElementById('modalSuccessView').style.display = 'none';
-    document.getElementById('modalDetailsView').style.display = 'flex';
-}
-
-function submitReservation(e) {
+function submitReview(e, productId) {
     e.preventDefault();
-    
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerText;
-    submitBtn.disabled = true;
-    submitBtn.innerText = "TRANSMITTING...";
+    const form = e.target;
+    const nameInput = form.querySelector('.review-name-input');
+    const ratingSelect = form.querySelector('.review-rating-select');
+    const commentTextarea = form.querySelector('.review-comment-textarea');
     
     const payload = {
-        name: document.getElementById('reserveName').value,
-        email: document.getElementById('reserveEmail').value,
-        phone: document.getElementById('reservePhone').value,
-        bust: document.getElementById('reserveBust').value,
-        waist: document.getElementById('reserveWaist').value,
-        hips: document.getElementById('reserveHips').value,
-        height: document.getElementById('reserveHeight').value,
-        suit_name: document.getElementById('reserveSuitName').value,
-        price: document.getElementById('reserveSuitPrice').value
+        user_name: nameInput.value,
+        rating: parseInt(ratingSelect.value),
+        comment: commentTextarea.value
     };
-
-    fetch('/api/reserve', {
+    
+    fetch(`/api/products/${productId}/review`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            // Hide form and show success view animation
-            document.getElementById('modalFormView').style.display = 'none';
-            document.getElementById('modalSuccessView').style.display = 'flex';
-            
-            document.getElementById('reservationForm').reset();
-            submitBtn.disabled = false;
-            submitBtn.innerText = originalText;
-            
-            // Auto close modal after 4 seconds
+            showToast("Review submitted successfully!");
+            form.reset();
             setTimeout(() => {
-                closeProductModal();
-            }, 4000);
+                window.location.reload();
+            }, 1000);
         } else {
-            alert('Failed to save reservation: ' + data.message);
-            submitBtn.disabled = false;
-            submitBtn.innerText = originalText;
+            alert(data.message);
         }
-    })
-    .catch(err => {
-        alert('Server connection failed: ' + err);
-        submitBtn.disabled = false;
-        submitBtn.innerText = originalText;
     });
 }
 </script>

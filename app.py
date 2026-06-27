@@ -2,10 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 import os
 import sqlite3
 from werkzeug.utils import secure_filename
-import pandas as pd
+import uuid
+import base64
 from models.body_analysis import analyze_body
-from xhtml2pdf import pisa
-from io import BytesIO
+from models.recommendation import get_style_recommendations
+from models.virtual_tryon import generate_tryon
 
 app = Flask(__name__)
 app.secret_key = 'wearwise_super_secret_key'
@@ -28,12 +29,8 @@ def get_current_analysis():
     gender = session.get('gender', 'Women')
     skin_tone = session.get('skin_tone', 'Medium')
     
-    # Calculate deterministically
     analysis = analyze_body(filepath, gender, skin_tone)
-    if analysis and "error" not in analysis:
-        analysis['body_type'] = analysis['body_type_detection']['type']
-        analysis['predicted_size'] = analysis['size_prediction']['size']
-        analysis['skin_tone'] = skin_tone
+    if analysis:
         return analysis
     return None
 
@@ -53,9 +50,11 @@ class FakeSession(dict):
 
 @app.context_processor
 def inject_session():
+    # Make cart count globally available
+    cart_count = len(session.get('cart', []))
     if 'image_path' in session:
-        return dict(session=FakeSession(session))
-    return dict(session=session)
+        return dict(session=FakeSession(session), cart_count=cart_count)
+    return dict(session=session, cart_count=cart_count)
 
 
 @app.route('/')
@@ -64,6 +63,43 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload():
+    # Can accept standard multipart file upload OR base64 camera input JSON
+    gender = 'Women'
+    skin_tone = 'Medium'
+    
+    # Handle Base64 Camera JSON
+    if request.is_json:
+        data = request.json
+        image_data = data.get('image')
+        gender = data.get('gender', 'Women')
+        skin_tone = data.get('skin_tone', 'Medium')
+        
+        if not image_data:
+            return jsonify({"success": False, "error": "No image data provided"}), 400
+            
+        try:
+            header, encoded = image_data.split(",", 1)
+            data_bytes = base64.b64decode(encoded)
+            filename = f"scan_{uuid.uuid4().hex}.jpg"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            with open(filepath, "wb") as f:
+                f.write(data_bytes)
+                
+            # Log scan in uploads table
+            conn = get_db_connection()
+            conn.execute('INSERT INTO uploads (gender, skin_tone) VALUES (?, ?)', (gender, skin_tone))
+            conn.commit()
+            conn.close()
+            
+            session['image_path'] = f'uploads/{filename}'
+            session['gender'] = gender
+            session['skin_tone'] = skin_tone
+            
+            return jsonify({"success": True, "redirect": url_for('result')})
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    # Fallback to standard multipart upload
     if 'file' not in request.files:
         return redirect(request.url)
     file = request.files['file']
@@ -78,22 +114,11 @@ def upload():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
         
-        # Analyze Body
-        analysis = analyze_body(filepath, gender, skin_tone)
-        if "error" in analysis:
-            return f"Error: {analysis['error']}"
-            
-        # Log to analytics
-        body_type = analysis['body_type_detection']['type']
-        predicted_size = analysis['size_prediction']['size']
-        
         conn = get_db_connection()
-        conn.execute('INSERT INTO uploads (predicted_size, body_type, gender) VALUES (?, ?, ?)',
-                     (predicted_size, body_type, gender))
+        conn.execute('INSERT INTO uploads (gender, skin_tone) VALUES (?, ?)', (gender, skin_tone))
         conn.commit()
         conn.close()
         
-        # Store only metadata in session to stay within 4KB cookie limits
         session['image_path'] = f'uploads/{filename}'
         session['gender'] = gender
         session['skin_tone'] = skin_tone
@@ -108,266 +133,149 @@ def result():
 
 @app.route('/recommendations')
 def recommendations():
-    if 'image_path' not in session:
-        return redirect(url_for('index'))
-        
+    gender = session.get('gender', 'Women')
+    skin_tone = session.get('skin_tone', 'Medium')
+    
     analysis = get_current_analysis()
     if not analysis:
-        return redirect(url_for('index'))
+        # Load default styling attributes for guest browsing
+        analysis = {
+            "style_dna": {"Minimalist": 40, "Smart Casual": 30, "Luxury Classic": 30},
+            "color_analysis": {"best": ["Emerald Green", "Royal Blue"], "accent": ["Gold", "Rose Gold"], "avoid": ["Neon Orange"]},
+            "fashion_summary": "Explore our premium handpicked coordinates."
+        }
         
-    predicted_size = analysis['size_prediction']['size']
     style_dna = analysis.get('style_dna', {})
-    user_body = analysis.get('body_type_detection', {}).get('type', 'Regular')
-    user_tone = session.get('skin_tone', 'Medium')
     
-    csv_path = os.path.join(os.path.dirname(__file__), 'wearwise_products.csv')
-    try:
-        df = pd.read_csv(csv_path)
-    except Exception as e:
-        df = pd.DataFrame()
-
-    if not df.empty:
-        dynamic_scores = []
-        for index, row in df.iterrows():
-            # Base match score from CSV
-            base_score = int(row.get('match_score', 85))
-            
-            # Check compatibility
-            body_match = 1.0 if str(row.get('body_type', '')).strip().lower() == user_body.strip().lower() else 0.5
-            tone_match = 1.0 if str(row.get('skin_tone', '')).strip().lower() == user_tone.strip().lower() else 0.5
-            
-            # Category and Style DNA compatibility
-            prod_cat = str(row.get('category', '')).strip().lower()
-            style_bonus = 0
-            for style, pct in style_dna.items():
-                style_l = style.lower()
-                if pct > 15:
-                    if 'casual' in style_l and prod_cat in ['casual', 'college']:
-                        style_bonus += 3
-                    elif 'luxury' in style_l and prod_cat in ['wedding', 'office']:
-                        style_bonus += 3
-                    elif 'business' in style_l and prod_cat in ['office']:
-                        style_bonus += 3
-                    elif 'contemporary' in style_l and prod_cat in ['party', 'festive']:
-                        style_bonus += 3
-            
-            # Calculate final score: weighted combination + small session-seeded variation
-            import hashlib
-            seed_key = f"{session.get('image_path', '')}_{row.get('id', '')}"
-            val_hash = int(hashlib.md5(seed_key.encode()).hexdigest(), 16) % 10
-            noise = (val_hash - 5) / 2.0  # -2.5 to 2.5
-            
-            computed_score = int(base_score * 0.7 + (body_match * 15) + (tone_match * 10) + style_bonus + noise)
-            computed_score = max(50, min(99, computed_score))
-            
-            row_dict = row.to_dict()
-            row_dict['style_match'] = computed_score
-            row_dict['match_score'] = computed_score
-            row_dict['size'] = predicted_size  # Override size to match predicted size
-            dynamic_scores.append(row_dict)
-            
-        dynamic_scores.sort(key=lambda x: x['style_match'], reverse=True)
-        products = dynamic_scores
-    else:
-        products = []
+    # Fetch products with dynamic compatibility and review counts
+    conn = get_db_connection()
+    products_db = conn.execute('''
+        SELECT p.*, COALESCE(AVG(r.rating), 0.0) as avg_rating, COUNT(r.id) as review_count
+        FROM products p
+        LEFT JOIN reviews r ON p.id = r.product_id
+        GROUP BY p.id
+    ''').fetchall()
     
+    # Calculate visual matching score
+    products = []
+    top_style = max(style_dna, key=style_dna.get) if style_dna else "Minimalist"
+    
+    for p in products_db:
+        p_dict = dict(p)
+        p_dict['avg_rating'] = round(p_dict['avg_rating'], 1)
+        
+        # Determine styling fit compatibility
+        gender_match = 1.0 if p_dict['gender'].lower() == gender.lower() else 0.4
+        
+        p_cat = p_dict['category'].lower()
+        category_match = 0.5
+        if "classic" in top_style.lower() and p_cat in ["office", "wedding"]:
+            category_match = 1.0
+        elif "casual" in top_style.lower() and p_cat in ["casual", "college"]:
+            category_match = 1.0
+        elif "business" in top_style.lower() and p_cat in ["office"]:
+            category_match = 1.0
+        elif "contemporary" in top_style.lower() and p_cat in ["party", "festive"]:
+            category_match = 1.0
+            
+        compatibility = int((gender_match * 60) + (category_match * 40))
+        p_dict['compatibility_score'] = max(60, min(99, compatibility))
+        
+        # Load reviews list for this product
+        reviews = conn.execute('SELECT * FROM reviews WHERE product_id = ? ORDER BY timestamp DESC', (p['id'],)).fetchall()
+        p_dict['reviews'] = [dict(rev) for rev in reviews]
+        
+        products.append(p_dict)
+        
+    conn.close()
+    
+    # Sort by compatibility
+    products.sort(key=lambda x: x['compatibility_score'], reverse=True)
     return render_template('recommendations.html', products=products)
 
-@app.route('/api/bmi', methods=['POST'])
-def bmi_api():
-    # Deprecated/mocked for now
-    return jsonify({"bmi": 0, "category": "N/A"})
-
-@app.route('/api/chat', methods=['POST'])
-def chat_api():
+# Review API
+@app.route('/api/products/<int:product_id>/review', methods=['POST'])
+def add_review(product_id):
     data = request.json
-    msg = data.get('message', '').strip()
-    msg_lower = msg.lower()
+    user_name = data.get('user_name', 'Anonymous')
+    rating = data.get('rating', 5)
+    comment = data.get('comment', '').strip()
     
-    # Track cycle index in session to rotate variations
-    if 'reply_cycle_index' not in session:
-        session['reply_cycle_index'] = 0
-    cycle_idx = session['reply_cycle_index']
-    session['reply_cycle_index'] = cycle_idx + 1
-    session.modified = True
+    if not comment:
+        return jsonify({"success": False, "message": "Review comment cannot be empty."}), 400
+        
+    try:
+        conn = get_db_connection()
+        conn.execute('INSERT INTO reviews (product_id, user_name, rating, comment) VALUES (?, ?, ?, ?)',
+                     (product_id, user_name, rating, comment))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Thank you for your feedback!"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
-    # Predefined 10 Q&A pairs with 3 variations each
-    predefined_qa = {
-        "what is my best suited wedding outfit?": [
-            "For a formal wedding, I highly recommend our **Suit Collection #4** in deep burgundy.",
-            "Our **Suit Collection #8** in a tailored emerald green is an exceptional choice for weddings.",
-            "The **Suit Collection #12** offers a timeless navy tone perfect for grand wedding events."
-        ],
-        "which color palette fits my skin tone best?": [
-            "Your undertones harmonize beautifully with jewel tones like emerald green and navy.",
-            "Rich warm tones like burgundy, teal, and cream complement your undertones perfectly.",
-            "Deep earth tones and polished gold accents match your complexion spectacularly."
-        ],
-        "how does the ai determine my body type?": [
-            "Our vision engine calculates skeletal ratios like your shoulder-to-hip balance.",
-            "The AI analyzes your body proportions by mapping key skeletal joint landmarks.",
-            "Our algorithms compare your torso-to-leg ratios to standard silhouette profiles."
-        ],
-        "what styling mistake should i avoid for my silhouette?": [
-            "Avoid wearing completely formless boxy styles that mask your natural waist structure.",
-            "Try to bypass stiff fabrics that drape poorly over your natural shoulder curvature.",
-            "We recommend staying away from heavy visual patterns that disrupt your proportions."
-        ],
-        "can you recommend a casual suit for a weekend brunch?": [
-            "The relaxed structure of **Suit Collection #5** paired with a light crewneck is an ideal fit.",
-            "Our **Suit Collection #1** is an effortless smart-casual choice for brunch outings.",
-            "The lightweight fabric drape of **Suit Collection #17** works beautifully for casual days."
-        ],
-        "what are the latest fashion trends for this season?": [
-            "Quiet luxury separates and monochromatic layering dominate this season's collections.",
-            "Minimalist tailoring and deep, saturated jewel tones are leading the current season.",
-            "Sophisticated separates and structured blazers are highly popular in high-end design."
-        ],
-        "how should i dress for a professional executive meeting?": [
-            "Opt for the sharp, structured shoulder profile of **Suit Collection #2** to command elegance.",
-            "The tailored fit of **Suit Collection #14** projects a clean, authoritative corporate look.",
-            "For key corporate calls, styling the sleek profile of **Suit Collection #20** is optimal."
-        ],
-        "which outfit is recommended for a campus presentation?": [
-            "The smart-casual balance of **Suit Collection #6** offers the perfect mix of comfort and focus.",
-            "Our **Suit Collection #12** in a clean, regular fit presents a highly polished student look.",
-            "Styling **Suit Collection #18** with simple clean pieces is perfect for presentations."
-        ],
-        "how do i choose the correct size for custom luxury suits?": [
-            "Our model matches your skeletal frame parameters directly to standard luxury sizes.",
-            "We calibrate your shoulder width and waist ratio to ensure the ideal suit size matches.",
-            "All recommended fits are pre-filtered to size standard parameters to guarantee comfort."
-        ],
-        "what makes wearwise different from other styling tools?": [
-            "We combine precision skeletal landmark scans with high-end luxury fashion theory.",
-            "Our tool analyzes body geometry and color chemistry rather than basic style quizzes.",
-            "WearWise generates custom Style DNA profiles mapped to a real curated catalog."
-        ]
-    }
-
-    # Cycling engaging follow-up questions
-    styling_questions = [
-        "Would you prefer styling this with gold accents or minimalist silver jewelry?",
-        "Are you planning to layer this look with a light knitwear piece or keep it simple?",
-        "Should we pair this with classic leather oxfords or modern luxury sneakers?",
-        "Are you looking to focus on warm earth tones or rich jewel shades for this look?",
-        "Would you style this suit open with a silk camisole or buttoned up for structure?",
-        "Do you prefer a tailored slim silhouette or a relaxed contemporary drape?",
-        "Would you wear this outfit to an evening social function or a daytime event?",
-        "Should we match this outfit with structured neutral outerwear or a pop of color?"
-    ]
-    followup_q = styling_questions[cycle_idx % len(styling_questions)]
-
-    # Match predefined question
-    clean_key = msg_lower.replace("?", "").strip() + "?"
-    reply_core = None
-    for k, variations in predefined_qa.items():
-        if clean_key == k or msg_lower == k:
-            reply_core = variations[cycle_idx % len(variations)]
-            break
-
-    if reply_core:
-        reply = f"{reply_core} {followup_q}"
-    else:
-        # Dynamic fallback matching
-        analysis = get_current_analysis()
-        predicted_size = analysis.get('size_prediction', {}).get('size') if analysis else "M"
-        body_type = analysis.get('body_type_detection', {}).get('type') if analysis else "Rectangle"
-        skin_tone = session.get('skin_tone', 'Medium')
-
-        # Wedding
-        if any(word in msg_lower for word in ['wedding', 'marriage', 'festive', 'reception', 'traditional', 'party']):
-            options = [
-                f"Based on your **{body_type}** frame, the deep burgundy profile of **Suit Collection #4** is highly recommended.",
-                f"For weddings, matching your **{skin_tone}** tone with the emerald **Suit Collection #8** is stunning.",
-                f"I suggest styling the navy **Suit Collection #12** in size **{predicted_size}** for formal festive events."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # College
-        elif any(word in msg_lower for word in ['college', 'school', 'university', 'campus', 'classes', 'student']):
-            options = [
-                f"For college, the relaxed structure of **Suit Collection #6** provides comfort and smart lines.",
-                f"I recommend the lightweight smart draping of **Suit Collection #12** for daily campus wear.",
-                f"Opt for **Suit Collection #18** to combine modern collegiate comfort with clean lines."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Office
-        elif any(word in msg_lower for word in ['office', 'work', 'job', 'interview', 'meeting', 'professional', 'formal']):
-            options = [
-                "I recommend the structured shoulders of **Suit Collection #2** for professional authority.",
-                f"The tailored corporate fit of **Suit Collection #14** in size **{predicted_size}** works beautifully for meetings.",
-                "Opt for the sharp corporate design of **Suit Collection #20** to command elegance."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Color
-        elif any(word in msg_lower for word in ['color', 'skin', 'palette', 'shade', 'hue', 'tone']):
-            options = [
-                f"Your **{skin_tone}** tone works beautifully with jewel tones, but bypass neons.",
-                "We recommend matching your undertones with rich, earthy shades and warm metallics.",
-                "Opt for deep classic navy, emerald, or burgundy to contrast with your complexion profile."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Body Shape / Fit
-        elif any(word in msg_lower for word in ['body type', 'body shape', 'hourglass', 'pear', 'rectangle', 'triangle', 'apple', 'athletic', 'silhouette', 'fit', 'cut']):
-            options = [
-                f"A custom cut like **Suit Collection #7** will balance your **{body_type}** frame nicely.",
-                f"For a **{body_type}** frame, we look to build structured lines with targeted waist styling.",
-                f"Opt for the balanced drape of **Suit Collection #3** (Oversized) to highlight your proportions."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Size
-        elif any(word in msg_lower for word in ['size', 'measurement', 'fit me', 'proportion', 'tall', 'short']):
-            options = [
-                f"All suits in your collection are pre-filtered to size **{predicted_size}** to guarantee an optimal drape.",
-                f"We align standard frame width sizes with your predicted size **{predicted_size}** locker.",
-                f"Sizing is locked to **{predicted_size}** to prevent loose sagging or uncomfortable pulling."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Avoid
-        elif any(word in msg_lower for word in ['mistake', 'avoid', 'don\'t wear', 'should not wear', 'bad fit']):
-            options = [
-                "Avoid boxy clothing that hides your waist structure completely.",
-                "Bypass heavy, high-contrast patterns that distract from your natural frame.",
-                "Avoid flat neon shades that clash with your color Undertones."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Trends
-        elif any(word in msg_lower for word in ['trend', 'latest', 'modern', 'current', 'in style', 'season', 'summer', 'winter']):
-            options = [
-                "Quiet luxury and clean monochromatic layers are this season's best look.",
-                "Saturated jewel tones and structured separates are dominating modern design.",
-                "Classic minimalist tailoring is the leading trend for luxury styling this season."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Casual
-        elif any(word in msg_lower for word in ['casual', 'weekend', 'brunch', 'everyday', 'simple']):
-            options = [
-                f"For smart-casual days, the comfortable drape of **Suit Collection #1** is excellent.",
-                f"I recommend the relaxed styling of **Suit Collection #5** in size **{predicted_size}** for weekends.",
-                "Style the regular-fit **Suit Collection #17** with clean basic layers for effortless leisure."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-        # Fallback
-        else:
-            options = [
-                f"To support your **{body_type}** frame, I recommend exploring **Suit Collection #1** in size **{predicted_size}**.",
-                f"I suggest starting with **Suit Collection #4** in size **{predicted_size}** to match your style DNA.",
-                f"Opt for the tailored versatility of **Suit Collection #10** to build your outfit foundation."
-            ]
-            reply_core = options[cycle_idx % len(options)]
-
-        reply = f"{reply_core} {followup_q}"
-
-    # Remove bold markdown formatting if present
-    reply = reply.replace('**', '')
-
-    # Append to chat history
-    if 'chat_history' not in session:
-        session['chat_history'] = []
-    session['chat_history'].append({"user": msg, "bot": reply})
-    session.modified = True
+# Cart API Actions
+@app.route('/api/cart/add', methods=['POST'])
+def cart_add():
+    data = request.json
+    product_id = data.get('product_id')
+    size = data.get('size', 'M')
     
-    return jsonify({"reply": reply})
+    if 'cart' not in session:
+        session['cart'] = []
+        
+    session['cart'].append({"product_id": product_id, "size": size})
+    session.modified = True
+    return jsonify({"success": True, "cart_count": len(session['cart'])})
+
+@app.route('/api/cart/clear', methods=['POST'])
+def cart_clear():
+    session.pop('cart', None)
+    return jsonify({"success": True})
+
+@app.route('/api/cart/checkout', methods=['POST'])
+def cart_checkout():
+    data = request.json
+    name = data.get('name')
+    email = data.get('email')
+    phone = data.get('phone')
+    
+    if not all([name, email, phone]):
+        return jsonify({"success": False, "message": "Name, email and phone number are required."}), 400
+        
+    cart = session.get('cart', [])
+    if not cart:
+        return jsonify({"success": False, "message": "Your cart is empty."}), 400
+        
+    try:
+        conn = get_db_connection()
+        for item in cart:
+            p_id = item['product_id']
+            size = item['size']
+            
+            # Fetch product details
+            prod = conn.execute('SELECT * FROM products WHERE id = ?', (p_id,)).fetchone()
+            if prod:
+                price = prod['price']
+                suit_name = prod['name']
+                
+                # Insert order (reservation)
+                conn.execute('''
+                    INSERT INTO reservations (name, email, phone, suit_name, price, selected_size, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (name, email, phone, suit_name, price, size, 'Pending'))
+                
+                # Reduce stock quantity
+                conn.execute('UPDATE products SET stock_quantity = MAX(0, stock_quantity - 1) WHERE id = ?', (p_id,))
+                
+        conn.commit()
+        conn.close()
+        
+        session.pop('cart', None)
+        return jsonify({"success": True, "message": "Order placed successfully!"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -379,51 +287,39 @@ def login():
         conn.close()
         
         if user:
-            session['admin'] = True
-            return redirect(url_for('admin'))
+            if user['role'] == 'admin':
+                session['admin'] = True
+                session['username'] = user['username']
+                return redirect(url_for('admin'))
+            else:
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                return redirect(url_for('index'))
         else:
-            return "Invalid Credentials"
+            return render_template('login.html', error="Invalid Username or Password")
     return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        conn = get_db_connection()
+        try:
+            conn.execute("INSERT INTO users (username, password, role) VALUES (?, ?, 'customer')", (username, password))
+            conn.commit()
+            conn.close()
+            return render_template('login.html', success="Registration successful! Please login.")
+        except Exception:
+            conn.close()
+            return render_template('register.html', error="Username already exists")
+    return render_template('register.html')
 
 @app.route('/logout')
 def logout():
-    session.pop('admin', None)
+    session.clear()
     return redirect(url_for('index'))
-
-@app.route('/api/reserve', methods=['POST'])
-def api_reserve():
-    data = request.json
-    name = data.get('name')
-    email = data.get('email')
-    phone = data.get('phone')
-    bust = data.get('bust', '')
-    waist = data.get('waist', '')
-    hips = data.get('hips', '')
-    height = data.get('height', '')
-    suit_name = data.get('suit_name')
-    price = data.get('price')
-    
-    if not all([name, email, phone, suit_name, price]):
-        return jsonify({"success": False, "message": "Required fields are missing."}), 400
-        
-    try:
-        if isinstance(price, str):
-            price = price.replace('₹', '').strip()
-        price_val = int(price)
-    except Exception:
-        price_val = 0
-
-    try:
-        conn = get_db_connection()
-        conn.execute('''
-            INSERT INTO reservations (name, email, phone, bust, waist, hips, height, suit_name, price)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (name, email, phone, bust, waist, hips, height, suit_name, price_val))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "message": "Your reservation has been recorded successfully!"})
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Database error: {e}"}), 500
 
 @app.route('/admin')
 def admin():
@@ -434,32 +330,97 @@ def admin():
     products = conn.execute('SELECT * FROM products').fetchall()
     reservations = conn.execute('SELECT * FROM reservations ORDER BY timestamp DESC').fetchall()
     
-    # Analytics
-    total_users = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
-    total_uploads = conn.execute('SELECT COUNT(*) FROM uploads').fetchone()[0]
-    total_reservations = conn.execute('SELECT COUNT(*) FROM reservations').fetchone()[0]
+    # Enhanced Analytics
+    total_scans = conn.execute('SELECT COUNT(*) FROM uploads').fetchone()[0]
+    total_orders = conn.execute('SELECT COUNT(*) FROM reservations').fetchone()[0]
+    today_orders = conn.execute("SELECT COUNT(*) FROM reservations WHERE date(timestamp) = date('now')").fetchone()[0]
+    pending_orders = conn.execute("SELECT COUNT(*) FROM reservations WHERE status = 'Pending'").fetchone()[0]
+    completed_orders = conn.execute("SELECT COUNT(*) FROM reservations WHERE status = 'Completed'").fetchone()[0]
     
-    # Most recommended size
-    top_size_row = conn.execute('SELECT predicted_size, COUNT(*) as count FROM uploads GROUP BY predicted_size ORDER BY count DESC LIMIT 1').fetchone()
-    top_size = top_size_row['predicted_size'] if top_size_row else "N/A"
+    total_customers = conn.execute('SELECT COUNT(DISTINCT email) FROM reservations').fetchone()[0]
+    total_revenue_row = conn.execute("SELECT SUM(price) FROM reservations WHERE status != 'Cancelled'").fetchone()
+    total_revenue = total_revenue_row[0] if total_revenue_row[0] is not None else 0
     
-    # Most common body type
-    top_body_row = conn.execute('SELECT body_type, COUNT(*) as count FROM uploads GROUP BY body_type ORDER BY count DESC LIMIT 1').fetchone()
-    top_body = top_body_row['body_type'] if top_body_row else "N/A"
+    # Graphs Data (Sales trends over past 7 days)
+    sales_trend_rows = conn.execute('''
+        SELECT date(timestamp) as day, SUM(price) as sales, COUNT(id) as count 
+        FROM reservations 
+        GROUP BY day 
+        ORDER BY day ASC 
+        LIMIT 7
+    ''').fetchall()
     
+    trend_labels = [row['day'] for row in sales_trend_rows]
+    trend_sales = [row['sales'] for row in sales_trend_rows]
+    trend_counts = [row['count'] for row in sales_trend_rows]
+    
+    # Popular Categories
+    cat_rows = conn.execute('''
+        SELECT suit_name, COUNT(id) as count 
+        FROM reservations 
+        GROUP BY suit_name 
+        ORDER BY count DESC 
+        LIMIT 5
+    ''').fetchall()
+    cat_labels = [row['suit_name'] for row in cat_rows]
+    cat_counts = [row['count'] for row in cat_rows]
+
     conn.close()
     
     stats = {
-        "total_users": total_users,
-        "total_uploads": total_uploads,
-        "total_reservations": total_reservations,
-        "top_size": top_size,
-        "top_body": top_body
+        "total_scans": total_scans,
+        "total_orders": total_orders,
+        "today_orders": today_orders,
+        "pending_orders": pending_orders,
+        "completed_orders": completed_orders,
+        "total_customers": total_customers,
+        "total_revenue": total_revenue,
+        "total_products": len(products)
     }
     
-    return render_template('admin.html', products=products, stats=stats, reservations=reservations)
+    # Size-wise sales breakdown
+    size_sales = {}
+    try:
+        size_rows = db.execute("SELECT size, SUM(quantity) as total FROM order_items GROUP BY size ORDER BY total DESC").fetchall()
+        for row in size_rows:
+            size_sales[row['size']] = row['total']
+    except Exception:
+        pass
+    size_labels = list(size_sales.keys()) if size_sales else []
+    size_counts = list(size_sales.values()) if size_sales else []
 
-@app.route('/admin/add', methods=['POST'])
+    graph_data = {
+        "trend_labels": trend_labels,
+        "trend_sales": trend_sales,
+        "trend_counts": trend_counts,
+        "cat_labels": cat_labels,
+        "cat_counts": cat_counts,
+        "size_labels": size_labels,
+        "size_counts": size_counts
+    }
+    
+    return render_template('admin.html', products=products, stats=stats, reservations=reservations, graph_data=graph_data)
+
+# Update Order Status checkmarks
+@app.route('/admin/order/status', methods=['POST'])
+def update_order_status():
+    if not session.get('admin'):
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    data = request.json
+    order_id = data.get('id')
+    status = data.get('status')
+    
+    try:
+        conn = get_db_connection()
+        conn.execute('UPDATE reservations SET status = ? WHERE id = ?', (status, order_id))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# Add/Edit/Delete products
+@app.route('/admin/product/add', methods=['POST'])
 def add_product():
     if not session.get('admin'):
         return redirect(url_for('login'))
@@ -469,13 +430,15 @@ def add_product():
     desc = request.form['description']
     gender = request.form['gender']
     cat = request.form['category']
-    body_type = request.form['body_type_suitability']
-    fit = request.form['suggested_fit']
-    price = request.form.get('price', 2999)
+    price = int(request.form.get('price', 2999))
+    stock = int(request.form.get('stock', 10))
+    sizes = request.form.get('sizes', 'S, M, L, XL, XXL')
+    suggested_fit = request.form.get('suggested_fit', 'Regular Fit')
+    body_type_suitability = request.form.get('body_type_suitability', 'All Body Types')
     
     # Handle Image Upload
     image_file = request.files.get('image')
-    image_filename = ""
+    image_filename = "suit1.jpg"
     if image_file and image_file.filename:
         filename = secure_filename(image_file.filename)
         products_dir = os.path.join(app.root_path, 'static', 'products')
@@ -483,101 +446,147 @@ def add_product():
         image_file.save(os.path.join(products_dir, filename))
         image_filename = filename
 
-    # Save to CSV so it shows up in Recommendations/Collections
-    csv_path = os.path.join(os.path.dirname(__file__), 'wearwise_products.csv')
-    try:
-        df = pd.read_csv(csv_path)
-    except Exception:
-        df = pd.DataFrame(columns=["id", "name", "image", "price", "size", "fit", "category", "gender", "match_score", "body_type", "skin_tone", "recommer", "description", "style_match"])
-
-    next_id = int(df['id'].max() + 1) if not df.empty else 1
-    new_row = {
-        "id": next_id,
-        "name": name,
-        "image": image_filename,
-        "price": int(price),
-        "size": "M",  # Base size
-        "fit": fit,
-        "category": cat,
-        "gender": gender,
-        "match_score": 85,
-        "body_type": body_type,
-        "skin_tone": "Medium",
-        "recommer": "Peach, Cre",
-        "description": desc,
-        "style_match": 85
-    }
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    df.to_csv(csv_path, index=False)
-
-    # Save to SQLite Database
     conn = get_db_connection()
     try:
-        conn.execute('INSERT INTO products (name, code, description, gender, category, body_type_suitability, suggested_fit) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                     (name, code, desc, gender, cat, body_type, fit))
+        conn.execute('''
+            INSERT INTO products (name, code, description, gender, category, price, image, stock_quantity, available_sizes, suggested_fit, body_type_suitability)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (name, code, desc, gender, cat, price, image_filename, stock, sizes, suggested_fit, body_type_suitability))
         conn.commit()
     except Exception as e:
-        pass
+        print(f"Error adding product: {e}")
     conn.close()
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/delete/<int:id>')
+@app.route('/admin/product/edit/<int:id>', methods=['POST'])
+def edit_product(id):
+    if not session.get('admin'):
+        return redirect(url_for('login'))
+        
+    name = request.form['name']
+    code = request.form['code']
+    desc = request.form['description']
+    gender = request.form['gender']
+    cat = request.form['category']
+    price = int(request.form.get('price', 2999))
+    stock = int(request.form.get('stock', 10))
+    sizes = request.form.get('sizes', 'S, M, L, XL, XXL')
+    suggested_fit = request.form.get('suggested_fit', 'Regular Fit')
+    body_type_suitability = request.form.get('body_type_suitability', 'All Body Types')
+    
+    conn = get_db_connection()
+    try:
+        conn.execute('''
+            UPDATE products 
+            SET name = ?, code = ?, description = ?, gender = ?, category = ?, price = ?, stock_quantity = ?, available_sizes = ?, suggested_fit = ?, body_type_suitability = ?
+            WHERE id = ?
+        ''', (name, code, desc, gender, cat, price, stock, sizes, suggested_fit, body_type_suitability, id))
+        conn.commit()
+    except Exception as e:
+        print(f"Error editing product: {e}")
+    conn.close()
+    
+    return redirect(url_for('admin'))
+
+@app.route('/admin/product/delete/<int:id>')
 def delete_product(id):
     if not session.get('admin'):
         return redirect(url_for('login'))
         
     conn = get_db_connection()
-    product = conn.execute('SELECT * FROM products WHERE id = ?', (id,)).fetchone()
-    if product:
-        name_to_delete = product['name']
-        conn.execute('DELETE FROM products WHERE id = ?', (id,))
-        conn.commit()
-        
-        # Also remove from CSV
-        csv_path = os.path.join(os.path.dirname(__file__), 'wearwise_products.csv')
-        try:
-            df = pd.read_csv(csv_path)
-            # Remove by matching name (case-insensitive)
-            df = df[df['name'].str.lower() != name_to_delete.lower()]
-            df.to_csv(csv_path, index=False)
-        except Exception:
-            pass
-            
+    conn.execute('DELETE FROM products WHERE id = ?', (id,))
+    conn.commit()
     conn.close()
     return redirect(url_for('admin'))
 
-@app.route('/generate_pdf')
-def generate_pdf():
-    if 'image_path' not in session:
-        return redirect(url_for('index'))
-        
-    analysis = get_current_analysis()
-    if not analysis:
-        return redirect(url_for('index'))
-        
-    # Resolve the absolute path of the uploaded image for xhtml2pdf compatibility
-    image_path = session['image_path']
-    abs_image_path = os.path.join(app.root_path, 'static', image_path)
-    abs_image_path = abs_image_path.replace('\\', '/')
+# Virtual Try-On progressive endpoints
+@app.route('/tryon')
+def tryon():
+    return render_template('tryon.html')
 
-    html = render_template('pdf_report.html', 
-                           analysis=analysis,
-                           image_path=abs_image_path)
-                           
+@app.route('/api/tryon/upload', methods=['POST'])
+def tryon_upload():
+    data = request.json
+    image_data = data.get('image')
+    if not image_data:
+        return jsonify({"success": False, "error": "No image data provided"}), 400
+    
     try:
-        pdf_io = BytesIO()
-        pisa_status = pisa.CreatePDF(html, dest=pdf_io)
+        header, encoded = image_data.split(",", 1)
+        data_bytes = base64.b64decode(encoded)
         
-        if pisa_status.err:
-            return f"Error generating PDF: {pisa_status.err}"
-            
-        response = make_response(pdf_io.getvalue())
-        response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = 'attachment; filename=wearwise_report.pdf'
-        return response
+        filename = f"tryon_{uuid.uuid4().hex}.jpg"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        with open(filepath, "wb") as f:
+            f.write(data_bytes)
+        
+        # Get all products from SQLite
+        conn = get_db_connection()
+        products = conn.execute('SELECT * FROM products').fetchall()
+        conn.close()
+        
+        products_list = []
+        for row in products:
+            products_list.append({
+                "id": row['id'],
+                "name": row['name'],
+                "price": row['price'],
+                "sizes": row['available_sizes'],
+                "category": row['category'],
+                "image": row['image']
+            })
+        
+        return jsonify({
+            "success": True,
+            "upload_id": filename,
+            "products": products_list
+        })
     except Exception as e:
-        return f"Error generating PDF. Detail: {e}"
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/tryon/generate/<upload_id>/<int:product_id>')
+def tryon_generate(upload_id, product_id):
+    upload_id = secure_filename(upload_id)
+    user_path = os.path.join(app.config['UPLOAD_FOLDER'], upload_id)
+    if not os.path.exists(user_path):
+        return jsonify({"success": False, "error": "User image not found"}), 404
+        
+    conn = get_db_connection()
+    product_row = conn.execute('SELECT * FROM products WHERE id = ?', (product_id,)).fetchone()
+    conn.close()
+    
+    if not product_row:
+        return jsonify({"success": False, "error": "Product not found"}), 404
+        
+    product_img_name = product_row['image']
+    product_path = os.path.join(app.root_path, 'static', 'products', product_img_name)
+    if not os.path.exists(product_path):
+        return jsonify({"success": False, "error": f"Product image file not found: {product_img_name}"}), 404
+        
+    out_filename = f"tryon_out_{product_id}_{upload_id}"
+    out_path = os.path.join(app.config['UPLOAD_FOLDER'], out_filename)
+    
+    try:
+        success = generate_tryon(user_path, product_path, out_path)
+        if success:
+            return jsonify({
+                "success": True,
+                "image_url": url_for('static', filename=f"uploads/{out_filename}"),
+                "product_id": product_id
+            })
+        else:
+            return jsonify({"success": False, "error": "Generation failed"}), 500
+    except Exception as e:
+        error_msg = str(e)
+        if "GPU_RUNTIME_REQUIRED" in error_msg:
+            return jsonify({
+                "success": False, 
+                "error": "GPU_RUNTIME_REQUIRED", 
+                "message": "A GPU-enabled runtime environment (PyTorch + CUDA) is required to execute the CatVTON / IDM-VTON model pipeline."
+            }), 400
+        else:
+            return jsonify({"success": False, "error": error_msg}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
