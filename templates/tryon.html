@@ -15,6 +15,14 @@
     <div id="tryonCaptureSection" class="glass" style="max-width: 700px; margin: 0 auto; padding: 2rem; border-radius: 20px; text-align: center; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
         <h2 style="margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 1.8rem;">Frame Your Body</h2>
         
+        <style>
+            @keyframes scanAnimation {
+                0% { top: 0%; }
+                50% { top: 100%; }
+                100% { top: 0%; }
+            }
+        </style>
+        
         <!-- Live Video Area -->
         <div id="cameraContainer" style="position: relative; width: 100%; max-height: 480px; aspect-ratio: 3/4; background: #faf2f3; border-radius: 12px; overflow: hidden; border: 2px dashed rgba(212, 163, 150, 0.3); margin-bottom: 1.5rem; display: flex; justify-content: center; align-items: center;">
             <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
@@ -22,6 +30,18 @@
             <!-- Snapshot Preview -->
             <img id="snapshotPreview" src="#" alt="Snapshot Preview" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none;">
             
+            <!-- Mock Camera Feed -->
+            <img id="mockCameraFeed" src="{{ url_for('static', filename='hero_model.png') }}" alt="Mock Camera Feed" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none;">
+            
+            <!-- Scanning laser animation -->
+            <div id="scanningLine" style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(to right, transparent, var(--accent-gold), transparent); box-shadow: 0 0 8px var(--accent-gold); display: none; z-index: 2; animation: scanAnimation 3s linear infinite;"></div>
+
+            <!-- Camera Error Placeholder (Hidden by default) -->
+            <div id="cameraErrorPlaceholder" style="display: none; padding: 2rem; color: var(--text-muted); text-align: center; z-index: 1;">
+                <i class="fas fa-camera-slash" style="font-size: 2rem; color: rgba(0,0,0,0.15); margin-bottom: 10px;"></i>
+                <p style="font-size: 0.85rem;">Camera unavailable. Please upload a high-quality full body photo.</p>
+            </div>
+
             <!-- Dashed Body Outline overlay -->
             <div id="silhouetteOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; opacity: 0.35;">
                 <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -172,9 +192,12 @@
 <script>
 let stream = null;
 let capturedBase64 = null;
+let isMockStream = false;
 
 const webcam = document.getElementById('webcam');
 const snapshotPreview = document.getElementById('snapshotPreview');
+const mockCameraFeed = document.getElementById('mockCameraFeed');
+const scanningLine = document.getElementById('scanningLine');
 const captureBtn = document.getElementById('captureBtn');
 const uploadFallbackBtn = document.getElementById('uploadFallbackBtn');
 const fallbackFileInput = document.getElementById('fallbackFileInput');
@@ -197,40 +220,55 @@ async function initWebcam() {
         webcam.srcObject = stream;
         document.getElementById('cameraStatusMsg').innerText = "Position your full body within the frame";
     } catch (err) {
-        console.warn("Could not access camera:", err);
-        document.getElementById('cameraStatusMsg').innerHTML = "<span style='color: #ff6b6b;'><i class='fas fa-exclamation-triangle'></i> Camera Access Blocked/Unavailable. Please Upload a Photo instead.</span>";
+        console.warn("Could not access camera, running simulated preview:", err);
+        isMockStream = true;
+        
+        // Hide webcam
         webcam.style.display = 'none';
-        document.getElementById('silhouetteOverlay').style.display = 'none';
+        
+        // Show simulated feed and glowing laser line
+        mockCameraFeed.style.display = 'block';
+        scanningLine.style.display = 'block';
+        
+        document.getElementById('silhouetteOverlay').style.display = 'block';
+        document.getElementById('cameraStatusMsg').innerHTML = "<span style='color: var(--accent-gold);'><i class='fas fa-sync fa-spin'></i> Simulated Active scanner. Click Capture.</span>";
         
         const container = document.getElementById('cameraContainer');
-        container.style.aspectRatio = 'auto';
-        container.style.height = '120px';
-        container.innerHTML = `
-            <div style="padding: 2rem; color: var(--text-muted);">
-                <i class="fas fa-camera-slash" style="font-size: 2rem; color: rgba(0,0,0,0.1); margin-bottom: 10px;"></i>
-                <p style="font-size: 0.85rem;">Camera unavailable. Please upload a high-quality full body photo.</p>
-            </div>
-        `;
-        captureBtn.style.display = 'none';
+        container.style.aspectRatio = '3/4';
+        container.style.height = 'auto';
+        
+        captureBtn.style.display = 'inline-block';
     }
 }
 
-// Snap photo from video stream
+// Snap photo from video stream or simulated feed
 captureBtn.addEventListener('click', () => {
-    if (!stream) return;
-    
     const canvas = document.createElement('canvas');
-    canvas.width = webcam.videoWidth || 640;
-    canvas.height = webcam.videoHeight || 480;
     const ctx = canvas.getContext('2d');
     
-    ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
-    capturedBase64 = canvas.toDataURL('image/jpeg', 0.9);
-    
-    snapshotPreview.src = capturedBase64;
-    snapshotPreview.style.display = 'block';
-    webcam.style.display = 'none';
-    document.getElementById('silhouetteOverlay').style.display = 'none';
+    if (isMockStream) {
+        canvas.width = mockCameraFeed.naturalWidth || 640;
+        canvas.height = mockCameraFeed.naturalHeight || 480;
+        ctx.drawImage(mockCameraFeed, 0, 0, canvas.width, canvas.height);
+        capturedBase64 = canvas.toDataURL('image/jpeg', 0.9);
+        
+        snapshotPreview.src = capturedBase64;
+        snapshotPreview.style.display = 'block';
+        mockCameraFeed.style.display = 'none';
+        scanningLine.style.display = 'none';
+        document.getElementById('silhouetteOverlay').style.display = 'none';
+    } else {
+        if (!stream) return;
+        canvas.width = webcam.videoWidth || 640;
+        canvas.height = webcam.videoHeight || 480;
+        ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+        capturedBase64 = canvas.toDataURL('image/jpeg', 0.9);
+        
+        snapshotPreview.src = capturedBase64;
+        snapshotPreview.style.display = 'block';
+        webcam.style.display = 'none';
+        document.getElementById('silhouetteOverlay').style.display = 'none';
+    }
     
     captureBtn.style.display = 'none';
     uploadFallbackBtn.style.display = 'none';
@@ -247,7 +285,16 @@ fallbackFileInput.addEventListener('change', (e) => {
             snapshotPreview.src = capturedBase64;
             snapshotPreview.style.display = 'block';
             webcam.style.display = 'none';
+            mockCameraFeed.style.display = 'none';
+            scanningLine.style.display = 'none';
             document.getElementById('silhouetteOverlay').style.display = 'none';
+            
+            const errorPl = document.getElementById('cameraErrorPlaceholder');
+            if (errorPl) errorPl.style.display = 'none';
+            
+            const container = document.getElementById('cameraContainer');
+            container.style.height = 'auto';
+            container.style.aspectRatio = '3/4';
             
             captureBtn.style.display = 'none';
             uploadFallbackBtn.style.display = 'none';
@@ -266,6 +313,19 @@ retakeBtn.addEventListener('click', () => {
         webcam.style.display = 'block';
         document.getElementById('silhouetteOverlay').style.display = 'block';
         captureBtn.style.display = 'inline-block';
+        const container = document.getElementById('cameraContainer');
+        container.style.aspectRatio = '3/4';
+    } else if (isMockStream) {
+        mockCameraFeed.style.display = 'block';
+        scanningLine.style.display = 'block';
+        document.getElementById('silhouetteOverlay').style.display = 'block';
+        captureBtn.style.display = 'inline-block';
+    } else {
+        const errorPl = document.getElementById('cameraErrorPlaceholder');
+        if (errorPl) errorPl.style.display = 'block';
+        const container = document.getElementById('cameraContainer');
+        container.style.height = '240px';
+        container.style.aspectRatio = 'auto';
     }
     uploadFallbackBtn.style.display = 'inline-block';
     retakeBtn.style.display = 'none';

@@ -131,6 +131,51 @@ def init_db():
     ''', sample_orders)
     print("Sample orders inserted.")
 
+    # Create Chatbot QA table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS chatbot_qa (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT UNIQUE NOT NULL,
+            answer TEXT NOT NULL
+        )
+    ''')
+
+    # Seed predefined Q&A
+    predefined_qa = [
+        ("What is WearWise AI?", "WearWise AI is a premium styling platform that analyzes your skin tone, gender, and preferences to provide personalized outfit suggestions and virtual try-ons."),
+        ("How does virtual try-on work?", "Simply upload a full-body photo or use our simulated scanner. The system overlays the selected garment onto your silhouette so you can preview the look instantly!"),
+        ("How do I place an order?", "Browse our collection, select your size, and click 'Reserve Outfit' or 'Add to Cart' to complete the checkout form. The administrator will approve your request."),
+        ("What are the default admin credentials?", "You can log in to the admin panel using username: 'Pankaj_Gurditta' and password: 'Pankaj$02'."),
+        ("Can I add a review to a product?", "Yes, you can write reviews and rate products from the Collection page to share your experience with other users."),
+        ("What payment methods are supported?", "Currently, WearWise supports Reservation Booking. Once secured, you will receive payment details and cash on delivery/dispatch coordination via email or phone."),
+        ("How can I access the Admin Dashboard?", "Click on the 'Admin Panel' link in the top navigation bar and log in with your admin credentials."),
+        ("What sizes are available?", "Our collections are available in sizes S, M, L, XL, and XXL. You can view size availability for each product on its details modal."),
+        ("Do you have clothes for men?", "No, WearWise is a boutique styling platform exclusively dedicated to premium designer collections and recommendations for women."),
+        ("How does color matching work?", "Our AI scanner matches your skin tone profile to a complementary color palette (e.g., warm gold/bronze for dark tones, navy/emerald for fair tones)."),
+        ("What is the return policy?", "We offer a 7-day easy exchange and return policy for all unworn garments with original styling tags intact."),
+        ("Who developed WearWise?", "WearWise was developed by Pankaj, Dishika, Abhinav, and Bhupesh."),
+        ("How do I contact support?", "You can reach out to our team at support@wearwise.ai or through the contact channels listed in the footer."),
+        ("Are the products authentic?", "Yes, all products in the WearWise catalog are 100% authentic, luxury-tailored designer apparel."),
+        ("Can I schedule a live styling consultation?", "Yes! You can coordinate virtual stylist video sessions by filling out the checkout reservation form, or contact support directly to book a session."),
+        ("How do I reset my account password?", "If you need to reset your password, please contact the site administrator or register a new account on our portal."),
+        ("Is custom tailoring available?", "Yes! We offer custom alterations and tailored fitting services for reserved outfits to match your specific measurements perfectly."),
+        ("How long does delivery take?", "Standard dispatch takes 2-3 business days. Delivery dates are confirmed once the admin approves your reserved order."),
+        ("Can I cancel a reservation?", "Yes, orders can be cancelled or modified from your customer portal prior to final dispatch approval by the admin."),
+        ("Is there a loyalty program?", "Yes, recurring customers receive points for every completed outfit reservation, which can be redeemed for exclusive designer discounts."),
+        ("What fabrics do you use?", "We utilize only premium luxury fabrics, including georgette, silk, velvet, premium cotton, and custom-embroidered blends."),
+        ("Can I track my order status?", "You can view your order status directly from the Admin control panel or request live email status updates from support."),
+        ("Do you ship internationally?", "Currently, we only ship nationwide. We are working on international logistics to support global shipping soon!"),
+        ("What is the AI Capsule Wardrobe Quiz?", "You can access our interactive AI Capsule Wardrobe Quiz from the top navigation bar. Answer 3 styling questions and the AI will curate a cohesive 3-piece coordinates capsule wardrobe collection for your specific occasion!"),
+        ("How do I plan a capsule wardrobe?", "Navigate to the 'Style Quiz' page, choose your occasion, select a color palette, and pick your preferred silhouette fit. The system will automatically construct a customized capsule wardrobe for you!"),
+        ("What is the Fabric Visualizer?", "The Fabric Visualizer is an interactive page on our website where you can select luxury fabric swatches (like Emerald Satin Silk, Ruby Raw Silk, Midnight Velvet, Champagne Brocade, or Georgette) to dynamically preview fabric coordinates and drapes on our style mannequin model!"),
+        ("How does the fabric visualizer work?", "Navigate to the 'Fabric Visualizer' page in the top menu and click on any colored swatch. The visualizer overlay will update the dress color on the model mannequin and display detailed information about the fabric weave, composition, wash care instructions, and link matching garments from the WearWise collection!"),
+        ("How can I track my order?", "Visit the 'Track My Order' page from the footer or navigate to /track. Enter the email address or phone number you used during reservation and your complete order status will be shown instantly with a live step-by-step progress tracker!"),
+        ("Where is my order?", "To check your order status, visit the Track My Order page and enter your registered email or phone number. You will see a live progress timeline showing whether your order is Pending, Processing, Approved, or Completed and dispatched."),
+        ("track my order", "You can track your reservation from our Track My Order page! Just enter your email or phone number to see the live status of all your orders.")
+    ]
+    cursor.executemany("INSERT OR IGNORE INTO chatbot_qa (question, answer) VALUES (?, ?)", predefined_qa)
+    print("Chatbot QA table seeded.")
+
     conn.commit()
     conn.close()
     print("Database initialization complete.")

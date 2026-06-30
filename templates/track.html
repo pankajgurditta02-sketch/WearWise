@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="padding: 12rem 5% 6rem; max-width: 900px; margin: 0 auto; color: var(--text-main);">
+
+    <!-- Page Header -->
+    <div style="text-align: center; margin-bottom: 4rem;" class="reveal">
+        <span style="font-size: 0.78rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 3px; font-weight: bold;">Live Status</span>
+        <h1 style="font-size: 3rem; color: var(--text-main); font-family: 'Cormorant Garamond', serif; margin: 0.5rem 0 1rem;">Track Your Order</h1>
+        <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto; font-size: 0.95rem;">
+            Enter the email address or phone number used during reservation to view your order status instantly.
+        </p>
+    </div>
+
+    <!-- Search Card -->
+    <div class="glass reveal" style="padding: 3rem; border-radius: 20px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); margin-bottom: 3rem;">
+        <div style="display: flex; gap: 1rem; align-items: stretch; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 260px; position: relative;">
+                <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
+                <input
+                    id="trackInput"
+                    type="text"
+                    placeholder="Enter email or phone number..."
+                    onkeydown="if(event.key==='Enter') trackNow()"
+                    style="width: 100%; padding: 1rem 1rem 1rem 2.8rem; background: var(--bg-main); border: 1.5px solid var(--glass-border); color: var(--text-main); border-radius: 10px; font-size: 0.95rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s; box-sizing: border-box;"
+                    onfocus="this.style.borderColor='var(--accent-gold)'"
+                    onblur="this.style.borderColor='var(--glass-border)'"
+                >
+            </div>
+            <button
+                onclick="trackNow()"
+                class="btn-gold"
+                id="trackBtn"
+                style="padding: 1rem 2.5rem; font-size: 0.9rem; border-radius: 10px; white-space: nowrap; letter-spacing: 1px;">
+                <i class="fas fa-arrow-right" style="margin-right: 6px;"></i> Track Order
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        <div id="trackError" style="display: none; margin-top: 1.2rem; padding: 0.9rem 1.2rem; background: rgba(192, 57, 43, 0.07); border: 1px solid rgba(192, 57, 43, 0.2); border-radius: 8px; color: #c0392b; font-size: 0.88rem;">
+            <i class="fas fa-exclamation-circle" style="margin-right: 6px;"></i>
+            <span id="trackErrorMsg"></span>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="trackResults" style="display: none;">
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+            <h2 style="font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: var(--text-main);">Your Reservations</h2>
+            <span id="orderCount" style="background: var(--accent-gold); color: #fff; font-size: 0.75rem; font-weight: bold; padding: 4px 12px; border-radius: 20px; letter-spacing: 1px;"></span>
+        </div>
+
+        <div id="ordersList" style="display: flex; flex-direction: column; gap: 1.5rem;"></div>
+    </div>
+
+</div>
+
+<script>
+const STATUS_CONFIG = {
+    'Pending': {
+        color: '#d68910',
+        bg: 'rgba(214, 137, 16, 0.08)',
+        border: 'rgba(214, 137, 16, 0.25)',
+        icon: 'fa-clock',
+        steps: [true, false, false, false],
+        label: 'Order Received — Awaiting Admin Approval'
+    },
+    'Processing': {
+        color: '#1a5276',
+        bg: 'rgba(26, 82, 118, 0.07)',
+        border: 'rgba(26, 82, 118, 0.2)',
+        icon: 'fa-cog',
+        steps: [true, true, false, false],
+        label: 'Being Processed — Preparation Underway'
+    },
+    'Approved': {
+        color: '#1e8449',
+        bg: 'rgba(30, 132, 73, 0.07)',
+        border: 'rgba(30, 132, 73, 0.2)',
+        icon: 'fa-check-circle',
+        steps: [true, true, true, false],
+        label: 'Approved — Ready for Dispatch'
+    },
+    'Completed': {
+        color: '#1e8449',
+        bg: 'rgba(30, 132, 73, 0.07)',
+        border: 'rgba(30, 132, 73, 0.2)',
+        icon: 'fa-box-open',
+        steps: [true, true, true, true],
+        label: 'Order Completed — Dispatched & Delivered'
+    }
+};
+
+function trackNow() {
+    const input = document.getElementById('trackInput').value.trim();
+    const btn = document.getElementById('trackBtn');
+    const errorBox = document.getElementById('trackError');
+    const errorMsg = document.getElementById('trackErrorMsg');
+    const resultsSection = document.getElementById('trackResults');
+    const ordersList = document.getElementById('ordersList');
+
+    if (!input) {
+        errorBox.style.display = 'block';
+        errorMsg.innerText = 'Please enter your registered email address or phone number.';
+        resultsSection.style.display = 'none';
+        return;
+    }
+
+    // Loading state
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:6px;"></i> Searching...';
+    errorBox.style.display = 'none';
+    resultsSection.style.display = 'none';
+
+    fetch('/api/track-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: input })
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-arrow-right" style="margin-right:6px;"></i> Track Order';
+
+        if (!data.success) {
+            errorBox.style.display = 'block';
+            errorMsg.innerText = data.message;
+            return;
+        }
+
+        document.getElementById('orderCount').innerText = data.orders.length + ' ORDER' + (data.orders.length > 1 ? 'S' : '') + ' FOUND';
+        ordersList.innerHTML = data.orders.map(order => renderOrderCard(order)).join('');
+        resultsSection.style.display = 'block';
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-arrow-right" style="margin-right:6px;"></i> Track Order';
+        errorBox.style.display = 'block';
+        errorMsg.innerText = 'Connection error. Please try again.';
+    });
+}
+
+function renderOrderCard(order) {
+    const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG['Pending'];
+    const steps = ['Order Placed', 'Processing', 'Approved', 'Dispatched'];
+    const date = new Date(order.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    const stepsHtml = steps.map((s, i) => `
+        <div style="display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; z-index: 1;">
+            <div style="
+                width: 36px; height: 36px; border-radius: 50%;
+                background: ${cfg.steps[i] ? cfg.color : 'var(--bg-tertiary)'};
+                border: 2px solid ${cfg.steps[i] ? cfg.color : 'var(--glass-border)'};
+                display: flex; align-items: center; justify-content: center;
+                color: ${cfg.steps[i] ? '#fff' : 'var(--text-muted)'};
+                font-size: 0.8rem; margin-bottom: 0.5rem;
+                transition: all 0.3s;
+            ">
+                <i class="fas ${cfg.steps[i] ? 'fa-check' : 'fa-circle'}" style="font-size: 0.75rem;"></i>
+            </div>
+            <span style="font-size: 0.7rem; color: ${cfg.steps[i] ? 'var(--text-main)' : 'var(--text-muted)'}; text-align: center; font-weight: ${cfg.steps[i] ? '600' : '400'}; letter-spacing: 0.5px;">${s}</span>
+        </div>
+    `).join('');
+
+    const connectorHtml = `
+        <div style="position: absolute; top: 18px; left: 0; right: 0; height: 2px; background: var(--bg-tertiary); z-index: 0;">
+            <div style="height: 100%; width: ${(cfg.steps.filter(Boolean).length - 1) * 33.33}%; background: ${cfg.color}; transition: width 0.5s ease;"></div>
+        </div>
+    `;
+
+    return `
+    <div class="glass" style="padding: 2.5rem; border-radius: 16px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); animation: fadeInUp 0.4s ease;">
+        <!-- Order Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.8rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1.2rem;">
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px;">Order #${order.id} • ${date}</span>
+                <h3 style="font-size: 1.3rem; color: var(--text-main); font-family: 'Cormorant Garamond', serif; margin: 0.3rem 0 0.2rem; font-weight: 700;">${order.suit_name}</h3>
+                <span style="font-size: 0.82rem; color: var(--text-muted);">Size: <strong style="color: var(--text-main);">${order.size}</strong> &nbsp;|&nbsp; ₹${order.price.toLocaleString('en-IN')}</span>
+            </div>
+            <div style="text-align: right;">
+                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 20px; background: ${cfg.bg}; border: 1px solid ${cfg.border};">
+                    <i class="fas ${cfg.icon}" style="color: ${cfg.color}; font-size: 0.82rem;"></i>
+                    <span style="color: ${cfg.color}; font-size: 0.8rem; font-weight: bold; letter-spacing: 0.5px;">${order.status.toUpperCase()}</span>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.4rem;">${cfg.label}</p>
+            </div>
+        </div>
+
+        <!-- Order Progress Tracker -->
+        <div style="position: relative; display: flex; justify-content: space-between; padding: 0.5rem 0 1rem;">
+            ${connectorHtml}
+            ${stepsHtml}
+        </div>
+    </div>
+    `;
+}
+</script>
+
+<style>
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+{% endblock %}

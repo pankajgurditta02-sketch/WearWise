@@ -107,16 +107,42 @@ nav.scrolled {
 .nav-links a {
     color: var(--text-main);
     text-decoration: none;
-    margin-left: 2rem;
     font-size: 0.78rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    transition: color 0.3s;
-    opacity: 0.8;
+    letter-spacing: 1.5px;
+    transition: var(--transition-smooth);
+    opacity: 1;
+    position: relative;
+    padding: 4px 0;
+    white-space: nowrap;
 }
 
-.nav-links a:hover { opacity: 1; color: var(--accent-gold); }
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: var(--accent-gold);
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+}
+
+.nav-links a:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+}
+
+.nav-links a:active {
+    transform: scale(0.9);
+}
+
+.nav-links a:hover {
+    color: var(--accent-gold);
+}
 
 /* Buttons */
 .btn-gold {
@@ -376,7 +402,7 @@ nav.scrolled {
     border-radius: 30px;
     border: 1px solid var(--glass-border);
     background: var(--bg-main);
-    color: #fff;
+    color: var(--text-main);
     font-size: 0.85rem;
     outline: none;
 }
@@ -396,6 +422,13 @@ nav.scrolled {
 }
 .chat-input-area button:hover {
     background: var(--accent-gold-hover);
+}
+
+.faq-suggestions-container button:hover {
+    background: var(--accent-gold) !important;
+    color: #fff !important;
+    border-color: var(--accent-gold) !important;
+    transform: translateY(-1px);
 }
 
 /* Success Checkmark Animation */

@@ -351,7 +351,6 @@
         <span class="marquee-item"><span class="dot"></span> AI Color Matching</span>
         <span class="marquee-item"><span class="dot"></span> Personalized Styling</span>
         <span class="marquee-item"><span class="dot"></span> Handcrafted Ethnic Wear</span>
-        <span class="marquee-item"><span class="dot"></span> Free Delivery Above ₹999</span>
         <span class="marquee-item"><span class="dot"></span> Virtual Try-On</span>
         <span class="marquee-item"><span class="dot"></span> Anarkali • Sharara • Lehenga</span>
         <span class="marquee-item"><span class="dot"></span> Premium Quality Fabrics</span>
@@ -360,7 +359,6 @@
         <span class="marquee-item"><span class="dot"></span> AI Color Matching</span>
         <span class="marquee-item"><span class="dot"></span> Personalized Styling</span>
         <span class="marquee-item"><span class="dot"></span> Handcrafted Ethnic Wear</span>
-        <span class="marquee-item"><span class="dot"></span> Free Delivery Above ₹999</span>
         <span class="marquee-item"><span class="dot"></span> Virtual Try-On</span>
         <span class="marquee-item"><span class="dot"></span> Anarkali • Sharara • Lehenga</span>
         <span class="marquee-item"><span class="dot"></span> Premium Quality Fabrics</span>
@@ -447,9 +445,16 @@
             <video id="liveVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: none;"></video>
             <img id="capturePreview" src="#" alt="Captured Preview" style="width: 100%; height: 100%; object-fit: cover; display: none;">
             
-            <div id="cameraPlaceholder" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                <i class="fas fa-camera" style="font-size: 3.5rem; color: var(--accent-gold); opacity: 0.3; margin-bottom: 1.2rem;"></i>
-                <p style="font-size: 0.95rem; margin-bottom: 1.5rem;">Camera has not been started yet.</p>
+            <div id="cameraPlaceholder" style="text-align: center; padding: 2rem; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <svg width="64" height="80" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: var(--accent-gold); opacity: 0.55; margin-bottom: 1.5rem; display: inline-block;">
+                    <!-- Brackets -->
+                    <path d="M18 10 H12 C9.8 10 8 11.8 8 14 V66 C8 68.2 9.8 70 12 70 H18" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M46 10 H52 C54.2 10 56 11.8 56 14 V66 C56 68.2 54.2 70 52 70 H46" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    <!-- Elegant Hourglass Gown Silhouette (No arms) -->
+                    <circle cx="32" cy="18" r="5" stroke="currentColor" stroke-width="3"/>
+                    <path d="M32 23 V27 M26 31 C26 29 38 29 38 31 C38 35 34 38 35 44 L41 58 H23 L29 44 C30 38 26 35 26 31 Z M28 58 V68 M36 58 V68" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p style="font-size: 0.95rem; margin-bottom: 1.5rem;">Please upload a clear full body image.</p>
                 <button class="btn-gold" onclick="startCamera()" style="padding: 0.8rem 2rem; font-size: 0.85rem;">Start Camera</button>
             </div>
             
@@ -542,11 +547,6 @@
 <section style="background: var(--bg-main); border-top: 1px solid rgba(192,130,97,0.08); padding: 4rem 5% 5rem;">
     <div style="max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2.5rem; text-align: center;">
         <div>
-            <i class="fas fa-truck" style="color: var(--accent-gold); font-size: 2rem; margin-bottom: 1rem;"></i>
-            <h4 style="color: var(--text-main); font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 1px;">Free Delivery</h4>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">On orders above ₹999</span>
-        </div>
-        <div>
             <i class="fas fa-right-left" style="color: var(--accent-gold); font-size: 2rem; margin-bottom: 1rem;"></i>
             <h4 style="color: var(--text-main); font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 1px;">Easy Returns</h4>
             <span style="font-size: 0.8rem; color: var(--text-muted);">7 days return policy</span>
@@ -558,8 +558,8 @@
         </div>
         <div>
             <i class="fas fa-headset" style="color: var(--accent-gold); font-size: 2rem; margin-bottom: 1rem;"></i>
-            <h4 style="color: var(--text-main); font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 1px;">24/7 Support</h4>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">We're here to help</span>
+            <h4 style="color: var(--text-main); font-size: 1rem; font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 1px;">Toll-Free Support</h4>
+            <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600; display: block;">+91 95883-12860</span>
         </div>
     </div>
 </section>

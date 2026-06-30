@@ -46,6 +46,32 @@ def analyze_body(image_path, gender="Women", skin_tone="Medium"):
 
     style_dna = generate_style_dna(rng)
     
+    # Predefined makeup & jewelry suggestions based on skin tone
+    if "fair" in tone:
+        beauty_analysis = {
+            "lipstick": ["Dusty Rose", "Soft Coral", "Cool Plum", "Berry Red"],
+            "eyeshadow": ["Champagne Shimmer", "Taupe Matte", "Soft Rose Gold", "Slate Grey"],
+            "blush": ["Baby Pink", "Peach Shimmer"],
+            "jewelry_metals": ["Polished Silver", "Platinum", "White Gold"],
+            "jewelry_style": "Minimalist delicate diamond studs, silver chains, and drop earrings."
+        }
+    elif "dark" in tone or "dusky" in tone:
+        beauty_analysis = {
+            "lipstick": ["Deep Burgundy", "Warm Bronze", "Bold Crimson", "Chocolate Nude"],
+            "eyeshadow": ["Metallic Gold", "Copper Shimmer", "Rich Emerald", "Warm Bronze"],
+            "blush": ["Terracotta", "Deep Peach"],
+            "jewelry_metals": ["Yellow Gold", "Polished Bronze", "Antiqued Brass"],
+            "jewelry_style": "Statement traditional gold chokers, oversized brass jhumkas, and temple jewelry pieces."
+        }
+    else: # Medium or Wheatish
+        beauty_analysis = {
+            "lipstick": ["Warm Mauve", "Spiced Peach", "Terracotta Red", "Soft Cinnamon"],
+            "eyeshadow": ["Spiced Copper", "Rose Gold", "Warm Brown Matte", "Olive Green"],
+            "blush": ["Rosewood", "Warm Apricot"],
+            "jewelry_metals": ["Warm Rose Gold", "Yellow Gold", "Antique Gold"],
+            "jewelry_style": "Rose gold pendant necklaces, classic gold hoop earrings, and kundan styling coordinates."
+        }
+
     fashion_summary = (
         f"Visual style scan matches your profile to a primary aesthetic of {max(style_dna, key=style_dna.get)}. "
         f"We suggest styling with {', '.join(best_colors[:3])} to complement your {skin_tone} skin tone."
@@ -60,5 +86,6 @@ def analyze_body(image_path, gender="Women", skin_tone="Medium"):
             "accent": accent_colors,
             "avoid": avoid_colors
         },
+        "beauty_analysis": beauty_analysis,
         "fashion_summary": fashion_summary
     }

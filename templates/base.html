@@ -21,21 +21,23 @@
 <body>
 
     <!-- Navigation Header -->
-    <nav class="{% if request.path != '/' %}nav-inner-page{% endif %}" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 5%; background: var(--bg-secondary); border-bottom: 1px solid var(--glass-border);">
+    <nav class="{% if request.path != '/' %}nav-inner-page{% endif %}" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 5%; background: var(--bg-tertiary); box-shadow: 0 4px 30px rgba(53, 37, 28, 0.1); border-bottom: 2px solid var(--accent-gold);">
         <!-- Logo (New rose-gold high-resolution logo) -->
         <a href="{{ url_for('index') }}" class="logo" style="display: flex; align-items: center; text-decoration: none;">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="WearWise AI" class="animated-logo" style="height: 120px; width: auto; object-fit: contain;">
         </a>
 
         <!-- Clean Simplified Center links -->
-        <div class="nav-links" style="display: flex; gap: 2.5rem; align-items: center;">
-            <a href="{{ url_for('index') }}" style="font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Home</a>
-            <a href="{{ url_for('recommendations') }}" style="font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Collection</a>
-            <a href="{{ url_for('tryon') }}" style="font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">Virtual Try-On</a>
+        <div class="nav-links" style="display: flex; gap: 1.8rem; align-items: center;">
+            <a href="{{ url_for('index') }}">Home</a>
+            <a href="{{ url_for('recommendations') }}">Collection</a>
+            <a href="{{ url_for('tryon') }}">Virtual Try-On</a>
+            <a href="{{ url_for('style_quiz') }}">Style Quiz</a>
+            <a href="{{ url_for('admin') }}" style="color: var(--accent-gold);"><i class="fas fa-user-shield" style="margin-right: 4px;"></i> Admin Panel</a>
         </div>
 
         <!-- Right Icons / Actions -->
-        <div style="display: flex; align-items: center; gap: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 1.8rem; margin-left: 2.5rem;">
             <!-- Theme Toggle Icon Button -->
             <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme" style="background: none; border: none; color: var(--text-main); font-size: 1.15rem; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; transition: var(--transition-smooth);">
                 <i class="fas fa-moon" id="themeIcon"></i>
@@ -128,9 +130,19 @@
                 <p style="line-height: 1.6; max-width: 320px;">Elevate your fashion with state-of-the-art vision color matching and live stylist recommendation networks.</p>
             </div>
 
+            <!-- Quick Links -->
+            <div style="display: flex; flex-direction: column; gap: 0.7rem;">
+                <h4 style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 0.3rem;">Quick Links</h4>
+                <a href="{{ url_for('index') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.83rem; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-muted)'">Home</a>
+                <a href="{{ url_for('recommendations') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.83rem; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-muted)'">Collection</a>
+                <a href="{{ url_for('style_quiz') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.83rem; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-muted)'">Style Quiz</a>
+                <a href="{{ url_for('track') }}" style="color: var(--accent-gold); text-decoration: none; font-size: 0.83rem; font-weight: 600;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'"><i class="fas fa-box-open" style="margin-right: 5px;"></i>Track My Order</a>
+            </div>
+
             <!-- Social and Contact -->
-            <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-end;">
+            <div style="display: flex; flex-direction: column; gap: 0.8rem; align-items: flex-end;">
                 <h4 style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Stay Connected</h4>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-main); font-weight: 700;"><i class="fas fa-phone-alt" style="color: var(--accent-gold); margin-right: 6px;"></i> Toll-Free: +91 95883-12860</p>
                 <div style="display: flex; gap: 1rem; font-size: 1.2rem;">
                     <a href="#" style="color: var(--text-muted);"><i class="fab fa-instagram"></i></a>
                     <a href="#" style="color: var(--text-muted);"><i class="fab fa-facebook-f"></i></a>
@@ -161,6 +173,22 @@
         </div>
         <div class="chat-body" id="chatBody">
             <div class="chat-msg bot">Welcome to WearWise. How can I assist with your styling today?</div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;" class="faq-suggestions-container">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px;">Styling & FAQ Suggestions:</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <button onclick="sendPrompt('What is WearWise AI?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">What is WearWise AI?</button>
+                    <button onclick="sendPrompt('How does virtual try-on work?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">How does try-on work?</button>
+                    <button onclick="sendPrompt('What are the default admin credentials?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">Admin login details?</button>
+                    <button onclick="sendPrompt('Is custom tailoring available?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">Is tailoring available?</button>
+                    <button onclick="sendPrompt('Do you have clothes for men?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">Are there clothes for men?</button>
+                    <button onclick="sendPrompt('How does color matching work?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">Color matching info?</button>
+                    <button onclick="sendPrompt('How long does delivery take?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">Delivery time?</button>
+                    <button onclick="sendPrompt('Can I cancel a reservation?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">Cancel order?</button>
+                    <button onclick="sendPrompt('What fabrics do you use?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">What fabrics are used?</button>
+                    <button onclick="sendPrompt('Do you ship internationally?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">International shipping?</button>
+                    <button onclick="sendPrompt('What is the AI Capsule Wardrobe Quiz?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif; border-color: var(--accent-gold);">Capsule Wardrobe Quiz?</button>
+                </div>
+            </div>
         </div>
         <div class="chat-input-area">
             <input type="text" id="chatInput" placeholder="Ask about fits, colors...">

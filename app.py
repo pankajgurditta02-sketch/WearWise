@@ -381,11 +381,11 @@ def admin():
     # Size-wise sales breakdown
     size_sales = {}
     try:
-        size_rows = db.execute("SELECT size, SUM(quantity) as total FROM order_items GROUP BY size ORDER BY total DESC").fetchall()
+        size_rows = conn.execute("SELECT selected_size as size, COUNT(*) as total FROM reservations GROUP BY selected_size ORDER BY total DESC").fetchall()
         for row in size_rows:
             size_sales[row['size']] = row['total']
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error fetching size sales: {e}")
     size_labels = list(size_sales.keys()) if size_sales else []
     size_counts = list(size_sales.values()) if size_sales else []
 
@@ -527,7 +527,22 @@ def tryon_upload():
         conn.close()
         
         products_list = []
+        seen_images = set()
+        seen_sizes = set()
         for row in products:
+            img = row['image']
+            if img in seen_images:
+                continue
+            
+            # Check file size to avoid identical images with different names
+            img_path = os.path.join(app.root_path, 'static', 'products', img)
+            if os.path.exists(img_path):
+                file_size = os.path.getsize(img_path)
+                if file_size in seen_sizes:
+                    continue
+                seen_sizes.add(file_size)
+                
+            seen_images.add(img)
             products_list.append({
                 "id": row['id'],
                 "name": row['name'],
@@ -587,6 +602,129 @@ def tryon_generate(upload_id, product_id):
             }), 400
         else:
             return jsonify({"success": False, "error": error_msg}), 500
+
+@app.route('/quiz')
+def style_quiz():
+    conn = get_db_connection()
+    products = conn.execute('SELECT * FROM products').fetchall()
+    conn.close()
+    
+    products_list = []
+    for row in products:
+        products_list.append({
+            "id": row['id'],
+            "name": row['name'],
+            "price": row['price'],
+            "sizes": row['available_sizes'],
+            "category": row['category'],
+            "image": row['image'],
+            "description": row['description']
+        })
+    return render_template('quiz.html', products=products_list)
+
+@app.route('/track')
+def track():
+    return render_template('track.html')
+
+@app.route('/api/track-order', methods=['POST'])
+def track_order():
+    data = request.json
+    identifier = data.get('identifier', '').strip()
+    
+    if not identifier:
+        return jsonify({'success': False, 'message': 'Please enter your email or phone number.'})
+    
+    conn = get_db_connection()
+    orders = conn.execute(
+        '''SELECT id, name, suit_name, selected_size, price, status, timestamp
+           FROM reservations
+           WHERE email = ? OR phone = ?
+           ORDER BY timestamp DESC''',
+        (identifier, identifier)
+    ).fetchall()
+    conn.close()
+    
+    if not orders:
+        return jsonify({'success': False, 'message': 'No orders found for this email or phone number.'})
+    
+    result = []
+    for o in orders:
+        result.append({
+            'id': o['id'],
+            'name': o['name'],
+            'suit_name': o['suit_name'],
+            'size': o['selected_size'],
+            'price': o['price'],
+            'status': o['status'],
+            'timestamp': o['timestamp']
+        })
+    
+    return jsonify({'success': True, 'orders': result})
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.json
+    user_msg = data.get('message', '').strip().lower()
+    
+    if not user_msg:
+        return jsonify({"reply": "How can I assist you with your styling query today?"})
+        
+    # Check for basic greetings
+    greetings = ['hi', 'hello', 'hey', 'greetings', 'hola', 'good morning', 'good afternoon', 'good evening', 'yo']
+    # Check for exact matches or matches stripped of exclamation marks
+    if user_msg.replace('!', '') in greetings:
+        return jsonify({"reply": "Hello! Welcome to WearWise. I am your personal Virtual Stylist. How can I assist you with your styling queries, size inquiries, or outfit reservations today?"})
+        
+    # Check for short common customer helper commands
+    quick_replies = {
+        "help": "I am here to assist! You can ask me about available sizes, styling recommendations, return policies, fabrics, or how our Virtual Try-On scanner works.",
+        "thanks": "You're very welcome! Let me know if you need help finding or reserving anything else in our collections.",
+        "thank you": "You're very welcome! Let me know if you need help finding or reserving anything else in our collections.",
+        "bye": "Goodbye! Thank you for visiting WearWise. Have a wonderful day!",
+        "goodbye": "Goodbye! Thank you for visiting WearWise. Have a wonderful day!",
+        "ok": "Understood! Let me know what other styling questions you have.",
+        "okay": "Understood! Let me know what other styling questions you have.",
+        "delivery": "Standard dispatch takes 2-3 business days. All delivery dates are coordinated and approved by the admin once reserved.",
+        "payment": "We support Reservation Booking. Custom payment coordinates (Cash on Delivery or online transfer) are finalized upon admin approval.",
+        "sizes": "Our outfits are available in sizes S, M, L, XL, and XXL. Size availability is listed on each collection card.",
+        "tailoring": "Yes! Custom alterations and tailoring fits are available for all reserved outfits to ensure a perfect style match."
+    }
+    
+    clean_msg = user_msg.replace('?', '').replace('!', '').strip()
+    if clean_msg in quick_replies:
+        return jsonify({"reply": quick_replies[clean_msg]})
+    
+    conn = get_db_connection()
+    qa_rows = conn.execute('SELECT question, answer FROM chatbot_qa').fetchall()
+    conn.close()
+    
+    best_match = None
+    max_score = 0
+    
+    for row in qa_rows:
+        question = row['question'].lower()
+        answer = row['answer']
+        
+        # Check if the user query matches or contains the question
+        if question in user_msg or user_msg in question:
+            best_match = answer
+            break
+            
+        # Count overlapping keywords
+        q_words = set(question.replace('?', '').replace('.', '').split())
+        u_words = set(user_msg.replace('?', '').replace('.', '').split())
+        common = q_words.intersection(u_words)
+        if len(common) > max_score:
+            max_score = len(common)
+            best_match = answer
+            
+    # Require at least 2 matching words for keyword mapping, or a direct substring match
+    if best_match:
+        reply = best_match
+    else:
+        reply = "I'm your WearWise Virtual Stylist! I can help you with your color palette, sizes, orders, and styling fits. Feel free to ask about our collections, admin credentials, or how virtual try-on works!"
+        
+    return jsonify({"reply": reply})
 
 if __name__ == '__main__':
     app.run(debug=True)

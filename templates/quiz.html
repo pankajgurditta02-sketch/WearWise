@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="padding: 12rem 5% 4rem; max-width: 1200px; margin: 0 auto; color: var(--text-main);">
+    
+    <!-- Title Section -->
+    <div style="text-align: center; margin-bottom: 4rem;" class="reveal">
+        <h1 style="font-size: 3rem; color: var(--accent-gold);">AI Capsule Wardrobe Planner</h1>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0.5rem auto 0;">
+            Answer a few style preferences to let our AI design a curated capsule wardrobe coordinates collection tailored for you.
+        </p>
+    </div>
+
+    <!-- Quiz Wizard Card -->
+    <div id="quizWizardCard" class="glass reveal" style="max-width: 750px; margin: 0 auto; padding: 3rem; border-radius: 20px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
+        
+        <!-- Progress Bar Indicator -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; font-size: 0.8rem; color: var(--text-muted); font-weight: bold; letter-spacing: 1px;">
+            <span id="quizStepIndicator">STEP 1 OF 3</span>
+            <div style="flex: 1; height: 4px; background: var(--bg-tertiary); margin: 0 1.5rem; border-radius: 2px; overflow: hidden;">
+                <div id="quizProgressBar" style="width: 33.3%; height: 100%; background: var(--accent-gold); transition: width 0.4s ease;"></div>
+            </div>
+            <span id="quizProgressPercent">33%</span>
+        </div>
+
+        <!-- Step 1: Occasion (Visual Cards) -->
+        <div id="quizStep1" class="quiz-step" style="display: block;">
+            <h3 style="font-size: 1.8rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; text-align: center; margin-bottom: 2rem;">What is the primary occasion for this wardrobe?</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                <div class="quiz-option-card" onclick="selectOption('occasion', 'Office')" style="padding: 2rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <i class="fas fa-briefcase" style="font-size: 2.2rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                    <h4 style="font-size: 1rem; font-family: 'Inter', sans-serif;">Office Meeting</h4>
+                </div>
+                <div class="quiz-option-card" onclick="selectOption('occasion', 'Party')" style="padding: 2rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <i class="fas fa-glass-cheers" style="font-size: 2.2rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                    <h4 style="font-size: 1rem; font-family: 'Inter', sans-serif;">Cocktail Party</h4>
+                </div>
+                <div class="quiz-option-card" onclick="selectOption('occasion', 'Wedding')" style="padding: 2rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <i class="fas fa-om" style="font-size: 2.2rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                    <h4 style="font-size: 1rem; font-family: 'Inter', sans-serif;">Festive/Wedding</h4>
+                </div>
+                <div class="quiz-option-card" onclick="selectOption('occasion', 'Casual')" style="padding: 2rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <i class="fas fa-coffee" style="font-size: 2.2rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                    <h4 style="font-size: 1rem; font-family: 'Inter', sans-serif;">Casual Weekend</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Color Palette preference -->
+        <div id="quizStep2" class="quiz-step" style="display: none;">
+            <h3 style="font-size: 1.8rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; text-align: center; margin-bottom: 2rem;">Which color palette coordinates appeal to you?</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                <div class="quiz-option-card" onclick="selectOption('palette', 'dark')" style="padding: 2rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 1rem;">
+                        <span style="width: 20px; height: 20px; border-radius: 50%; background: #3A2E2F;"></span>
+                        <span style="width: 20px; height: 20px; border-radius: 50%; background: #8E7A7C;"></span>
+                    </div>
+                    <h4 style="font-size: 1rem; font-family: 'Inter', sans-serif;">Royal & Deep</h4>
+                </div>
+                <div class="quiz-option-card" onclick="selectOption('palette', 'light')" style="padding: 2rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 1rem;">
+                        <span style="width: 20px; height: 20px; border-radius: 50%; background: #EED9D5;"></span>
+                        <span style="width: 20px; height: 20px; border-radius: 50%; background: #F5DDD8;"></span>
+                    </div>
+                    <h4 style="font-size: 1rem; font-family: 'Inter', sans-serif;">Soft Pastels</h4>
+                </div>
+                <div class="quiz-option-card" onclick="selectOption('palette', 'gold')" style="padding: 2rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <div style="display: flex; gap: 4px; justify-content: center; margin-bottom: 1rem;">
+                        <span style="width: 20px; height: 20px; border-radius: 50%; background: #C08261;"></span>
+                        <span style="width: 20px; height: 20px; border-radius: 50%; background: #D4A396;"></span>
+                    </div>
+                    <h4 style="font-size: 1rem; font-family: 'Inter', sans-serif;">Warm Golds</h4>
+                </div>
+            </div>
+            <button class="btn-outline" onclick="prevStep(1)" style="margin-top: 2rem; padding: 0.6rem 1.5rem; font-size: 0.8rem;"><i class="fas fa-arrow-left" style="margin-right: 5px;"></i> Back</button>
+        </div>
+
+        <!-- Step 3: Style Fit preference -->
+        <div id="quizStep3" class="quiz-step" style="display: none;">
+            <h3 style="font-size: 1.8rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; text-align: center; margin-bottom: 2rem;">What is your preferred fit silhouette?</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                <div class="quiz-option-card" onclick="selectOption('fit', 'Regular')" style="padding: 2.5rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <i class="fas fa-compress-arrows-alt" style="font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                    <h4 style="font-size: 1.1rem; font-family: 'Inter', sans-serif; margin-bottom: 0.4rem;">Regular Tailored Fit</h4>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Sleek corporate cuts and classic contours</p>
+                </div>
+                <div class="quiz-option-card" onclick="selectOption('fit', 'Relaxed')" style="padding: 2.5rem 1rem; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-main); cursor: pointer; text-align: center; transition: var(--transition-smooth);">
+                    <i class="fas fa-wind" style="font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 1rem;"></i>
+                    <h4 style="font-size: 1.1rem; font-family: 'Inter', sans-serif; margin-bottom: 0.4rem;">Flowy & Loose Silhouette</h4>
+                    <p style="font-size: 0.78rem; color: var(--text-muted);">Graceful festive drapes and airy shapes</p>
+                </div>
+            </div>
+            <button class="btn-outline" onclick="prevStep(2)" style="margin-top: 2rem; padding: 0.6rem 1.5rem; font-size: 0.8rem;"><i class="fas fa-arrow-left" style="margin-right: 5px;"></i> Back</button>
+        </div>
+    </div>
+
+    <!-- Wardrobe Loading screen -->
+    <div id="quizLoading" style="display: none; max-width: 600px; margin: 4rem auto; text-align: center;" class="reveal">
+        <h2 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-size: 2rem; font-family: 'Cormorant Garamond', serif;">COMPILING YOUR CAPSULE DESIGN</h2>
+        <div style="margin: 2rem 0; display: flex; justify-content: center;">
+            <div class="tryon-spinner"></div>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Matching fabrics, styles, colors, and cuts from database inventory to curate cohesive styling looks...</p>
+    </div>
+
+    <!-- Capsule Wardrobe Results Gallery (Hidden initially) -->
+    <div id="quizResults" style="display: none; margin-top: 4rem;">
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <span style="font-size: 0.8rem; color: var(--accent-gold); text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">Tailored Specifically For You</span>
+            <h2 style="font-size: 2.8rem; color: var(--text-main); font-family: 'Cormorant Garamond', serif; margin: 0.5rem 0 1rem;">Your AI Capsule Wardrobe</h2>
+            <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">These outfits compose a harmonized color coordinates collection suited for your occasion choice.</p>
+        </div>
+
+        <div id="capsuleWardrobeGrid" class="premium-product-grid">
+            <!-- Dynamically matched outfits injected here -->
+        </div>
+
+        <!-- Reservation checkout CTA for full capsule -->
+        <div class="glass" style="max-width: 800px; margin: 4rem auto 0; padding: 2.5rem; border-radius: 16px; border: 1px solid var(--glass-border); background: var(--bg-secondary); text-align: center; box-shadow: var(--glass-shadow);">
+            <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: var(--accent-gold); margin-bottom: 0.5rem;">Reserve Full Curated Capsule</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Love the full look? Secure all capsule wardrobe pieces in one click.</p>
+            <button class="btn-gold" style="padding: 1rem 3rem; font-size: 0.95rem; border-radius: 8px;" onclick="openCapsuleCheckoutModal()">Reserve Full Capsule Collection</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Reservation Modal -->
+<div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(8px); z-index: 10000; justify-content: center; align-items: center; padding: 2rem;" onclick="if(event.target == this) closeProductModal()">
+    <div class="glass" style="max-width: 800px; width: 100%; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; display: flex; flex-wrap: wrap; position: relative; box-shadow: var(--glass-shadow);">
+        
+        <!-- Close Button -->
+        <button onclick="closeProductModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; z-index: 10;"><i class="fas fa-times"></i></button>
+        
+        <!-- Left Side: Image -->
+        <div style="flex: 1; min-width: 300px; height: 450px; overflow: hidden; position: relative;">
+            <img id="modalProductImg" src="" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        
+        <!-- Right Side: Details -->
+        <div id="modalDetailsView" style="flex: 1.2; min-width: 320px; padding: 3rem; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <span id="modalProductCategory" style="color: var(--accent-gold); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;"></span>
+                <h2 id="modalProductName" style="font-size: 2.2rem; margin: 0.5rem 0 1rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; color: var(--text-main);"></h2>
+                <div style="font-size: 1.5rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 1.5rem;" id="modalProductPrice"></div>
+                <p id="modalProductDesc" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem;"></p>
+                
+                <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
+                        <span style="color: var(--text-muted);">SIZES AVAILABLE</span>
+                        <span id="modalProductSizes" style="color: var(--text-main); font-weight: 500;"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button class="btn-gold" style="width: 100%; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; border: none; cursor: pointer;" onclick="showFormView()">Reserve Outfit</button>
+            </div>
+        </div>
+
+        <!-- Right Side: Reservation Form -->
+        <div id="modalFormView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: space-between;">
+            <div>
+                <h3 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600;">Checkout Order</h3>
+                <form id="reservationForm" onsubmit="submitReservation(event)">
+                    <input type="hidden" id="reserveSuitName">
+                    <input type="hidden" id="reserveSuitPrice">
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">YOUR FULL NAME</label>
+                            <input type="text" id="reserveName" required style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-size: 0.85rem;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">EMAIL ADDRESS</label>
+                            <input type="email" id="reserveEmail" required style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-size: 0.85rem;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">PHONE NUMBER</label>
+                            <input type="tel" id="reservePhone" required style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-size: 0.85rem;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">SELECT SIZE</label>
+                            <select id="reserveSize" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-size: 0.85rem;">
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn-gold" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; border: none; cursor: pointer;">Confirm Order</button>
+                        <button type="button" class="btn-outline" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer;" onclick="showDetailsView()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Side: Success Animation -->
+        <div id="modalSuccessView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+            <div class="success-checkmark-wrapper" style="margin-bottom: 2rem; position: relative; width: 100px; height: 100px;">
+                <div class="pulse-ring"></div>
+                <svg class="checkmark-svg" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            <h3 style="color: var(--accent-gold); font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600; letter-spacing: 1px;">ORDER COMPLETED</h3>
+            <p style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 280px; font-weight: 300; line-height: 1.5;">Your capsule style reservation has been successfully booked.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+const products = {{ products | tojson }};
+const selections = {
+    occasion: '',
+    palette: '',
+    fit: ''
+};
+
+// Select visual option in step
+function selectOption(category, value) {
+    selections[category] = value;
+    
+    // Highlight option card
+    const currentStepDiv = document.querySelector('.quiz-step:not([style*="display: none"])');
+    const cards = currentStepDiv.querySelectorAll('.quiz-option-card');
+    cards.forEach(c => {
+        c.style.borderColor = 'var(--glass-border)';
+        c.style.background = 'var(--bg-main)';
+    });
+    
+    event.currentTarget.style.borderColor = 'var(--accent-gold)';
+    event.currentTarget.style.background = 'rgba(192, 130, 97, 0.05)';
+    
+    setTimeout(() => {
+        if (category === 'occasion') {
+            nextStep(2);
+        } else if (category === 'palette') {
+            nextStep(3);
+        } else if (category === 'fit') {
+            calculateCapsule();
+        }
+    }, 450);
+}
+
+function nextStep(step) {
+    document.querySelectorAll('.quiz-step').forEach(s => s.style.display = 'none');
+    document.getElementById(`quizStep${step}`).style.display = 'block';
+    
+    document.getElementById('quizStepIndicator').innerText = `STEP ${step} OF 3`;
+    const percent = Math.floor((step / 3) * 100);
+    document.getElementById('quizProgressBar').style.width = `${percent}%`;
+    document.getElementById('quizProgressPercent').innerText = `${percent}%`;
+}
+
+function prevStep(step) {
+    document.querySelectorAll('.quiz-step').forEach(s => s.style.display = 'none');
+    document.getElementById(`quizStep${step}`).style.display = 'block';
+    
+    document.getElementById('quizStepIndicator').innerText = `STEP ${step} OF 3`;
+    const percent = Math.floor((step / 3) * 100);
+    document.getElementById('quizProgressBar').style.width = `${percent}%`;
+    document.getElementById('quizProgressPercent').innerText = `${percent}%`;
+}
+
+// Calculate the 3 capsule matches
+function calculateCapsule() {
+    document.getElementById('quizWizardCard').style.display = 'none';
+    document.getElementById('quizLoading').style.display = 'block';
+    
+    setTimeout(() => {
+        document.getElementById('quizLoading').style.display = 'none';
+        document.getElementById('quizResults').style.display = 'block';
+        
+        // Filter logic based on occasion category mapping
+        let matched = [];
+        
+        // Find main outfits matching the category
+        if (selections.occasion === 'Office') {
+            matched = products.filter(p => p.category.toLowerCase().includes('office'));
+        } else if (selections.occasion === 'Party') {
+            matched = products.filter(p => p.category.toLowerCase().includes('party') || p.category.toLowerCase().includes('casual'));
+        } else if (selections.occasion === 'Wedding') {
+            matched = products.filter(p => p.category.toLowerCase().includes('wedding') || p.category.toLowerCase().includes('festive'));
+        } else { // Casual
+            matched = products.filter(p => p.category.toLowerCase().includes('casual') || p.category.toLowerCase().includes('college'));
+        }
+        
+        // Final safety: if not enough matches, take default products
+        if (matched.length < 3) {
+            const ids = new Set(matched.map(p => p.id));
+            products.forEach(p => {
+                if (matched.length < 3 && !ids.has(p.id)) {
+                    matched.push(p);
+                }
+            });
+        }
+        
+        // Slice to exactly 3 items to compose the capsule
+        matched = matched.slice(0, 3);
+        
+        // Render capsule items
+        const grid = document.getElementById('capsuleWardrobeGrid');
+        grid.innerHTML = matched.map((p, idx) => `
+            <div class="premium-card reveal active">
+                <div class="card-image-wrapper" style="height: 380px; position: relative;">
+                    <img src="/static/products/${p.image}" alt="${p.name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; top: 1rem; left: 1rem; background: var(--accent-gold); color: #fff; font-size: 0.72rem; padding: 4px 10px; border-radius: 20px; font-weight: bold; letter-spacing: 1px;">
+                        LOOK #${idx + 1}
+                    </div>
+                </div>
+                <div class="card-content" style="padding: 1.8rem;">
+                    <span style="color: var(--accent-gold); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1.5px;">${p.category}</span>
+                    <h3 style="font-size: 1.35rem; color: var(--text-main); font-family: 'Cormorant Garamond', serif; font-weight: bold; margin: 0.4rem 0 0.8rem;">${p.name}</h3>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.2rem;">${p.description}</p>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-top: 1.2rem;">
+                        <span style="font-size: 1.15rem; color: var(--accent-gold); font-weight: 600;">₹${p.price}</span>
+                        <button class="btn-gold btn-sm" onclick="openProductModal('${p.name}', '/static/products/${p.image}', '${p.price}', '${p.sizes}', '${p.category}', '${p.description.replace(/'/g, "\\'")}')" style="padding: 0.5rem 1.2rem; font-size: 0.8rem; border-radius: 4px;">Reserve Look</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+    }, 1800);
+}
+
+// Modal actions
+function openProductModal(name, imgUrl, price, sizes, cat, desc) {
+    document.getElementById('modalProductName').innerText = name;
+    document.getElementById('modalProductImg').src = imgUrl;
+    document.getElementById('modalProductPrice').innerText = '₹' + price;
+    document.getElementById('modalProductSizes').innerText = sizes;
+    document.getElementById('modalProductCategory').innerText = cat;
+    document.getElementById('modalProductDesc').innerText = desc || '';
+    
+    document.getElementById('reserveSuitName').value = name;
+    document.getElementById('reserveSuitPrice').value = price;
+    
+    const select = document.getElementById('reserveSize');
+    select.innerHTML = '';
+    const arr = sizes.split(',');
+    arr.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.trim();
+        option.innerText = s.trim();
+        select.appendChild(option);
+    });
+    
+    showDetailsView();
+    document.getElementById('productModal').style.display = 'flex';
+}
+
+function closeProductModal() {
+    document.getElementById('productModal').style.display = 'none';
+}
+
+function showFormView() {
+    document.getElementById('modalDetailsView').style.display = 'none';
+    document.getElementById('modalSuccessView').style.display = 'none';
+    document.getElementById('modalFormView').style.display = 'flex';
+}
+
+function showDetailsView() {
+    document.getElementById('modalFormView').style.display = 'none';
+    document.getElementById('modalSuccessView').style.display = 'none';
+    document.getElementById('modalDetailsView').style.display = 'flex';
+}
+
+function submitReservation(e) {
+    e.preventDefault();
+    
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerText;
+    submitBtn.disabled = true;
+    submitBtn.innerText = "CHECKING OUT...";
+    
+    const payload = {
+        name: document.getElementById('reserveName').value,
+        email: document.getElementById('reserveEmail').value,
+        phone: document.getElementById('reservePhone').value,
+        size: document.getElementById('reserveSize').value,
+    };
+
+    fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: 1, size: payload.size })
+    })
+    .then(() => {
+        return fetch('/api/cart/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: payload.name,
+                email: payload.email,
+                phone: payload.phone
+            })
+        });
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('modalFormView').style.display = 'none';
+            document.getElementById('modalSuccessView').style.display = 'flex';
+            document.getElementById('reservationForm').reset();
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+            
+            setTimeout(() => {
+                closeProductModal();
+            }, 3000);
+        } else {
+            alert('Failed to checkout order: ' + data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerText = originalText;
+        }
+    })
+    .catch(err => {
+        alert('Server checkout connection failed: ' + err);
+        submitBtn.disabled = false;
+        submitBtn.innerText = originalText;
+    });
+}
+
+function openCapsuleCheckoutModal() {
+    // Open reservation checkout using default capsule look 
+    openProductModal("Curated Style Capsule Collection (Full Set)", "/static/hero_model.png", "5999", "S, M, L, XL, XXL", "Curated Capsule Set", "Curated full wardrobe set including matching coordinates, outer wraps, and design accents.");
+}
+</script>
+{% endblock %}

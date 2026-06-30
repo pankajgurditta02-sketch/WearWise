@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="padding: 8rem 5% 4rem; max-width: 1200px; margin: 0 auto; color: var(--text-main);">
+    
+    <!-- Title Section -->
+    <div style="text-align: center; margin-bottom: 4.5rem;" class="reveal">
+        <h1 style="font-size: 3rem; color: var(--accent-gold);">Interactive Fabric & Swatch Visualizer</h1>
+        <p style="color: var(--text-muted); max-width: 600px; margin: 0.5rem auto 0;">
+            Select different luxury fabric color coordinates to dynamically view the style drape and texture on our mannequin model.
+        </p>
+    </div>
+
+    <!-- Visualizer Split Section -->
+    <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 3.5rem;" class="reveal">
+        
+        <!-- Left: Interactive Mannequin Canvas -->
+        <div class="glass" style="padding: 2rem; border-radius: 20px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); position: relative; display: flex; justify-content: center; align-items: center; min-height: 520px;">
+            
+            <div style="position: relative; width: 100%; max-width: 380px; aspect-ratio: 3/4; overflow: hidden; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                <!-- Mannequin Base image (Uses hero_model.png which has gray suit coordinates) -->
+                <img id="mannequinBase" src="{{ url_for('static', filename='hero_model.png') }}" alt="Mannequin" style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(100%) brightness(1.15) contrast(0.9);">
+                
+                <!-- CSS Color Overlay Blending Layer (Using SVG clip-path to target the suit/dress body only) -->
+                <div id="fabricColorOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(192, 130, 97, 0.4); mix-blend-mode: color; transition: background 0.4s ease, opacity 0.4s ease; clip-path: polygon(30% 28%, 45% 26%, 53% 26%, 66% 28%, 68% 36%, 68% 45%, 72% 58%, 70% 64%, 66% 70%, 64% 88%, 65% 95%, 35% 95%, 34% 88%, 32% 68%, 28% 60%, 30% 45%, 30% 36%);"></div>
+                
+                <!-- Texture overlay to give satin/silk sheen -->
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: radial-gradient(circle at 35% 45%, rgba(255,255,255,0.2) 0%, transparent 60%); mix-blend-mode: overlay;"></div>
+
+                <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase;">
+                    Interactive Swatch Model
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Right: Swatch Control and Fabric Details -->
+        <div style="display: flex; flex-direction: column; gap: 2rem; justify-content: space-between;">
+            
+            <!-- Swatch Selector -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 20px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
+                <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; color: var(--text-main); margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.8rem;"><i class="fas fa-palette" style="color: var(--accent-gold); margin-right: 8px;"></i> Select Fabric Swatch</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 12px; margin-bottom: 1rem;">
+                    
+                    <!-- Emerald -->
+                    <button onclick="changeFabric('emerald', 'rgba(9, 121, 105, 0.55)', 'Satin Silk', 'Luxury Mulberry Silk', 'Royal Emerald Green', 'Heavy drape with a rich high-luster liquid sheen. Perfect for evening cocktail events.', 'Emerald Green Blazer #6')" class="swatch-btn" style="border: 2px solid var(--glass-border); width: 100%; aspect-ratio: 1; border-radius: 12px; background: #097969; cursor: pointer; transition: var(--transition-smooth); outline: none; position: relative;">
+                        <span style="position: absolute; bottom: 5px; left: 5%; width: 90%; font-size: 0.58rem; color: #fff; text-transform: uppercase; font-weight: bold; background: rgba(0,0,0,0.4); border-radius: 3px;">Emerald</span>
+                    </button>
+
+                    <!-- Ruby -->
+                    <button onclick="changeFabric('ruby', 'rgba(155, 17, 30, 0.52)', 'Raw Silk', 'Premium Banarasi Silk', 'Midnight Ruby Red', 'Textured handwoven structure with a natural matte-shimmer finish. Ideal for wedding wear.', 'Warm Burgundy Kurta #4')" class="swatch-btn" style="border: 2px solid var(--glass-border); width: 100%; aspect-ratio: 1; border-radius: 12px; background: #9b111e; cursor: pointer; transition: var(--transition-smooth); outline: none; position: relative;">
+                        <span style="position: absolute; bottom: 5px; left: 5%; width: 90%; font-size: 0.58rem; color: #fff; text-transform: uppercase; font-weight: bold; background: rgba(0,0,0,0.4); border-radius: 3px;">Ruby</span>
+                    </button>
+
+                    <!-- Sapphire -->
+                    <button onclick="changeFabric('sapphire', 'rgba(15, 82, 186, 0.48)', 'Velvet', 'Italian Micro-Velvet', 'Midnight Sapphire Blue', 'Ultra-soft plush surface that catches low lights beautifully. Perfect for executive wear.', 'Midnight Tuxedo Suit #3')" class="swatch-btn" style="border: 2px solid var(--glass-border); width: 100%; aspect-ratio: 1; border-radius: 12px; background: #0f52ba; cursor: pointer; transition: var(--transition-smooth); outline: none; position: relative;">
+                        <span style="position: absolute; bottom: 5px; left: 5%; width: 90%; font-size: 0.58rem; color: #fff; text-transform: uppercase; font-weight: bold; background: rgba(0,0,0,0.4); border-radius: 3px;">Sapphire</span>
+                    </button>
+
+                    <!-- Gold -->
+                    <button onclick="changeFabric('gold', 'rgba(192, 130, 97, 0.5)', 'Brocade', 'Kashmiri Gold Brocade', 'Champagne Gold', 'Intricate metallic threadwork styled across a light cream base. Ideal for festive social coordinate wear.', 'Golden Velvet Suit #5')" class="swatch-btn" style="border: 2px solid var(--glass-border); width: 100%; aspect-ratio: 1; border-radius: 12px; background: #C08261; cursor: pointer; transition: var(--transition-smooth); outline: none; position: relative;">
+                        <span style="position: absolute; bottom: 5px; left: 5%; width: 90%; font-size: 0.58rem; color: #fff; text-transform: uppercase; font-weight: bold; background: rgba(0,0,0,0.4); border-radius: 3px;">Gold</span>
+                    </button>
+
+                    <!-- Rose -->
+                    <button onclick="changeFabric('rose', 'rgba(212, 163, 150, 0.52)', 'Organza Georgette', 'Premium Sheer Georgette', 'Dusk Rose Gold', 'Sheer, lightweight silhouette that drapes gracefully with matching contours.', 'Classic Suit Collection #1')" class="swatch-btn" style="border: 2px solid var(--glass-border); width: 100%; aspect-ratio: 1; border-radius: 12px; background: #D4A396; cursor: pointer; transition: var(--transition-smooth); outline: none; position: relative;">
+                        <span style="position: absolute; bottom: 5px; left: 5%; width: 90%; font-size: 0.58rem; color: #fff; text-transform: uppercase; font-weight: bold; background: rgba(0,0,0,0.4); border-radius: 3px;">Rose</span>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Fabric Info Details Card -->
+            <div class="glass" style="padding: 2.5rem; border-radius: 20px; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow); flex: 1; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <span id="fabricComposition" style="color: var(--accent-gold); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: bold;">Luxury Mulberry Silk</span>
+                    <h2 id="fabricName" style="font-size: 2.2rem; margin: 0.4rem 0 1rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; color: var(--text-main);">Royal Emerald Green</h2>
+                    
+                    <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">Weave Type</div>
+                            <strong id="fabricWeave" style="color: var(--text-main);">Satin Silk</strong>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">Wash Care</div>
+                            <strong style="color: var(--text-main);">Dry Clean Only</strong>
+                        </div>
+                    </div>
+                    
+                    <p id="fabricDesc" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5;">Heavy drape with a rich high-luster liquid sheen. Perfect for evening cocktail events.</p>
+                </div>
+
+                <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 10px;">
+                    <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Matching Collection Item:</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-main); padding: 1rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                        <div>
+                            <h4 id="matchingItemName" style="font-size: 0.95rem; font-family: 'Inter', sans-serif; font-weight: 600; color: var(--text-main);">Emerald Green Blazer #6</h4>
+                            <span style="font-size: 0.78rem; color: var(--accent-gold); font-weight: bold;">Coordinates Available</span>
+                        </div>
+                        <a href="{{ url_for('recommendations') }}" class="btn-gold btn-sm" style="padding: 0.5rem 1.2rem; font-size: 0.8rem; border-radius: 4px; text-decoration: none;">Shop Item</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+// Change fabric swatch overlay color and details panel text
+function changeFabric(key, overlayRgba, weave, comp, name, desc, matchingItem) {
+    // Reset active button borders
+    const buttons = document.querySelectorAll('.swatch-btn');
+    buttons.forEach(b => {
+        b.style.borderColor = 'var(--glass-border)';
+        b.style.transform = 'none';
+    });
+    
+    // Set clicked button active styles
+    event.currentTarget.style.borderColor = 'var(--text-main)';
+    event.currentTarget.style.transform = 'scale(1.08)';
+
+    // Update overlay blending color
+    const overlay = document.getElementById('fabricColorOverlay');
+    overlay.style.background = overlayRgba;
+
+    // Update details card texts
+    document.getElementById('fabricWeave').innerText = weave;
+    document.getElementById('fabricComposition').innerText = comp;
+    document.getElementById('fabricName').innerText = name;
+    document.getElementById('fabricDesc').innerText = desc;
+    document.getElementById('matchingItemName').innerText = matchingItem;
+}
+
+// Set default emerald swatch on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const defaultBtn = document.querySelector('.swatch-btn');
+    if (defaultBtn) {
+        defaultBtn.click();
+    }
+});
+</script>
+
+<style>
+.swatch-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+</style>
+{% endblock %}
