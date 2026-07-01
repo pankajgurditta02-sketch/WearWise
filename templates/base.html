@@ -31,8 +31,11 @@
         <div class="nav-links" style="display: flex; gap: 1.8rem; align-items: center;">
             <a href="{{ url_for('index') }}">Home</a>
             <a href="{{ url_for('recommendations') }}">Collection</a>
+            <a href="{{ url_for('recommendations', category='Formals') }}">Formals</a>
             <a href="{{ url_for('tryon') }}">Virtual Try-On</a>
-            <a href="{{ url_for('style_quiz') }}">Style Quiz</a>
+            <a href="{{ url_for('track') }}" class="btn-track-order" style="border: 1.5px solid #D95473; padding: 0.45rem 1.1rem; border-radius: 30px; color: #D95473; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: var(--transition-smooth); white-space: nowrap;" onmouseover="this.style.background='#D95473'; this.style.color='#fff';" onmouseout="this.style.background='transparent'; this.style.color='#D95473';">
+                <i class="fas fa-box-open"></i> Track Order
+            </a>
             <a href="{{ url_for('admin') }}" style="color: var(--accent-gold);"><i class="fas fa-user-shield" style="margin-right: 4px;"></i> Admin Panel</a>
         </div>
 
@@ -135,8 +138,6 @@
                 <h4 style="color: var(--text-main); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; margin-bottom: 0.3rem;">Quick Links</h4>
                 <a href="{{ url_for('index') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.83rem; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-muted)'">Home</a>
                 <a href="{{ url_for('recommendations') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.83rem; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-muted)'">Collection</a>
-                <a href="{{ url_for('style_quiz') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.83rem; transition: color 0.2s;" onmouseover="this.style.color='var(--accent-gold)'" onmouseout="this.style.color='var(--text-muted)'">Style Quiz</a>
-                <a href="{{ url_for('track') }}" style="color: var(--accent-gold); text-decoration: none; font-size: 0.83rem; font-weight: 600;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'"><i class="fas fa-box-open" style="margin-right: 5px;"></i>Track My Order</a>
             </div>
 
             <!-- Social and Contact -->
@@ -186,7 +187,6 @@
                     <button onclick="sendPrompt('Can I cancel a reservation?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">Cancel order?</button>
                     <button onclick="sendPrompt('What fabrics do you use?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">What fabrics are used?</button>
                     <button onclick="sendPrompt('Do you ship internationally?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif;">International shipping?</button>
-                    <button onclick="sendPrompt('What is the AI Capsule Wardrobe Quiz?')" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); font-size: 0.72rem; padding: 6px 12px; border-radius: 15px; cursor: pointer; transition: var(--transition-smooth); font-family: 'Inter', sans-serif; border-color: var(--accent-gold);">Capsule Wardrobe Quiz?</button>
                 </div>
             </div>
         </div>

@@ -135,6 +135,7 @@ def result():
 def recommendations():
     gender = session.get('gender', 'Women')
     skin_tone = session.get('skin_tone', 'Medium')
+    category_filter = request.args.get('category', '').strip()
     
     analysis = get_current_analysis()
     if not analysis:
@@ -149,12 +150,21 @@ def recommendations():
     
     # Fetch products with dynamic compatibility and review counts
     conn = get_db_connection()
-    products_db = conn.execute('''
-        SELECT p.*, COALESCE(AVG(r.rating), 0.0) as avg_rating, COUNT(r.id) as review_count
-        FROM products p
-        LEFT JOIN reviews r ON p.id = r.product_id
-        GROUP BY p.id
-    ''').fetchall()
+    if category_filter:
+        products_db = conn.execute('''
+            SELECT p.*, COALESCE(AVG(r.rating), 0.0) as avg_rating, COUNT(r.id) as review_count
+            FROM products p
+            LEFT JOIN reviews r ON p.id = r.product_id
+            WHERE LOWER(p.category) = ?
+            GROUP BY p.id
+        ''', (category_filter.lower(),)).fetchall()
+    else:
+        products_db = conn.execute('''
+            SELECT p.*, COALESCE(AVG(r.rating), 0.0) as avg_rating, COUNT(r.id) as review_count
+            FROM products p
+            LEFT JOIN reviews r ON p.id = r.product_id
+            GROUP BY p.id
+        ''').fetchall()
     
     # Calculate visual matching score
     products = []
@@ -169,11 +179,11 @@ def recommendations():
         
         p_cat = p_dict['category'].lower()
         category_match = 0.5
-        if "classic" in top_style.lower() and p_cat in ["office", "wedding"]:
+        if "classic" in top_style.lower() and p_cat in ["office", "wedding", "formals"]:
             category_match = 1.0
         elif "casual" in top_style.lower() and p_cat in ["casual", "college"]:
             category_match = 1.0
-        elif "business" in top_style.lower() and p_cat in ["office"]:
+        elif "business" in top_style.lower() and p_cat in ["office", "formals"]:
             category_match = 1.0
         elif "contemporary" in top_style.lower() and p_cat in ["party", "festive"]:
             category_match = 1.0
@@ -191,7 +201,7 @@ def recommendations():
     
     # Sort by compatibility
     products.sort(key=lambda x: x['compatibility_score'], reverse=True)
-    return render_template('recommendations.html', products=products)
+    return render_template('recommendations.html', products=products, active_category=category_filter)
 
 # Review API
 @app.route('/api/products/<int:product_id>/review', methods=['POST'])

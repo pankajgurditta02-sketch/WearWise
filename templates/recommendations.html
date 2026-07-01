@@ -9,6 +9,39 @@
         <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Curated selections based on your style scan and color compatibility.</p>
     </div>
 
+    <!-- Category Filter Bar -->
+    <div style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 4rem; flex-wrap: wrap;" class="reveal">
+        <a href="{{ url_for('recommendations') }}" style="text-decoration: none; padding: 0.6rem 1.6rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: var(--transition-smooth); 
+            {% if not active_category %} background: var(--accent-gold); color: #fff; border: 1.5px solid var(--accent-gold);
+            {% else %} background: transparent; color: var(--text-muted); border: 1.5px solid var(--glass-border); {% endif %}"
+            onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.color='{% if not active_category %}#fff{% else %}var(--accent-gold){% endif %}'"
+            onmouseout="this.style.borderColor='{% if not active_category %}var(--accent-gold){% else %}var(--glass-border){% endif %}'; this.style.color='{% if not active_category %}#fff{% else %}var(--text-muted){% endif %}'">All</a>
+
+        <a href="{{ url_for('recommendations', category='Formals') }}" style="text-decoration: none; padding: 0.6rem 1.6rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: var(--transition-smooth); 
+            {% if active_category == 'Formals' %} background: var(--accent-gold); color: #fff; border: 1.5px solid var(--accent-gold);
+            {% else %} background: transparent; color: var(--text-muted); border: 1.5px solid var(--glass-border); {% endif %}"
+            onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.color='{% if active_category == 'Formals' %}#fff{% else %}var(--accent-gold){% endif %}'"
+            onmouseout="this.style.borderColor='{% if active_category == 'Formals' %}var(--accent-gold){% else %}var(--glass-border){% endif %}'; this.style.color='{% if active_category == 'Formals' %}#fff{% else %}var(--text-muted){% endif %}'">Formals</a>
+
+        <a href="{{ url_for('recommendations', category='Wedding') }}" style="text-decoration: none; padding: 0.6rem 1.6rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: var(--transition-smooth); 
+            {% if active_category == 'Wedding' %} background: var(--accent-gold); color: #fff; border: 1.5px solid var(--accent-gold);
+            {% else %} background: transparent; color: var(--text-muted); border: 1.5px solid var(--glass-border); {% endif %}"
+            onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.color='{% if active_category == 'Wedding' %}#fff{% else %}var(--accent-gold){% endif %}'"
+            onmouseout="this.style.borderColor='{% if active_category == 'Wedding' %}var(--accent-gold){% else %}var(--glass-border){% endif %}'; this.style.color='{% if active_category == 'Wedding' %}#fff{% else %}var(--text-muted){% endif %}'">Wedding</a>
+
+        <a href="{{ url_for('recommendations', category='Festive') }}" style="text-decoration: none; padding: 0.6rem 1.6rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: var(--transition-smooth); 
+            {% if active_category == 'Festive' %} background: var(--accent-gold); color: #fff; border: 1.5px solid var(--accent-gold);
+            {% else %} background: transparent; color: var(--text-muted); border: 1.5px solid var(--glass-border); {% endif %}"
+            onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.color='{% if active_category == 'Festive' %}#fff{% else %}var(--accent-gold){% endif %}'"
+            onmouseout="this.style.borderColor='{% if active_category == 'Festive' %}var(--accent-gold){% else %}var(--glass-border){% endif %}'; this.style.color='{% if active_category == 'Festive' %}#fff{% else %}var(--text-muted){% endif %}'">Festive</a>
+
+        <a href="{{ url_for('recommendations', category='College') }}" style="text-decoration: none; padding: 0.6rem 1.6rem; border-radius: 30px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: var(--transition-smooth); 
+            {% if active_category == 'College' %} background: var(--accent-gold); color: #fff; border: 1.5px solid var(--accent-gold);
+            {% else %} background: transparent; color: var(--text-muted); border: 1.5px solid var(--glass-border); {% endif %}"
+            onmouseover="this.style.borderColor='var(--accent-gold)'; this.style.color='{% if active_category == 'College' %}#fff{% else %}var(--accent-gold){% endif %}'"
+            onmouseout="this.style.borderColor='{% if active_category == 'College' %}var(--accent-gold){% else %}var(--glass-border){% endif %}'; this.style.color='{% if active_category == 'College' %}#fff{% else %}var(--text-muted){% endif %}'">College</a>
+    </div>
+
     <!-- Product Grid -->
     <div class="premium-product-grid">
         {% for p in products %}
