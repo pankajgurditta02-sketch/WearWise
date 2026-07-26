@@ -1,608 +1,804 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="padding: 8rem 5% 4rem; max-width: 1400px; margin: 0 auto; color: var(--text-main);">
-    
-    <!-- Title Section -->
-    <div style="text-align: center; margin-bottom: 3rem;" class="reveal">
-        <h1 style="font-size: 3rem; color: var(--accent-gold);">AI Virtual Try-On</h1>
-        <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">
-            Capture one full-body image to view yourself dressed in every outfit in our collection instantly.
-        </p>
-    </div>
+<!-- Styling custom transitions and keyframes -->
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
 
-    <!-- Camera / Input Section -->
-    <div id="tryonCaptureSection" class="glass" style="max-width: 700px; margin: 0 auto; padding: 2rem; border-radius: 20px; text-align: center; background: var(--bg-secondary); border: 1px solid var(--glass-border); box-shadow: var(--glass-shadow);">
-        <h2 style="margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 1.8rem;">Frame Your Body</h2>
-        
-        <style>
-            @keyframes scanAnimation {
-                0% { top: 0%; }
-                50% { top: 100%; }
-                100% { top: 0%; }
-            }
-        </style>
-        
-        <!-- Live Video Area -->
-        <div id="cameraContainer" style="position: relative; width: 100%; max-height: 480px; aspect-ratio: 3/4; background: #faf2f3; border-radius: 12px; overflow: hidden; border: 2px dashed rgba(212, 163, 150, 0.3); margin-bottom: 1.5rem; display: flex; justify-content: center; align-items: center;">
-            <video id="webcam" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-            
-            <!-- Snapshot Preview -->
-            <img id="snapshotPreview" src="#" alt="Snapshot Preview" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none;">
-            
-            <!-- Mock Camera Feed -->
-            <img id="mockCameraFeed" src="{{ url_for('static', filename='hero_model.png') }}" alt="Mock Camera Feed" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; display: none;">
-            
-            <!-- Scanning laser animation -->
-            <div id="scanningLine" style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(to right, transparent, var(--accent-gold), transparent); box-shadow: 0 0 8px var(--accent-gold); display: none; z-index: 2; animation: scanAnimation 3s linear infinite;"></div>
+    /* Moving gradient overlay for luxury loader using theme colors */
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .animated-grad {
+        background: linear-gradient(-45deg, var(--accent-gold), #4F46E5, var(--accent-gold-hover), #1D4ED8);
+        background-size: 400% 400%;
+        animation: gradientBG 6s ease infinite;
+    }
 
-            <!-- Camera Error Placeholder (Hidden by default) -->
-            <div id="cameraErrorPlaceholder" style="display: none; padding: 2rem; color: var(--text-muted); text-align: center; z-index: 1;">
-                <i class="fas fa-camera-slash" style="font-size: 2rem; color: rgba(0,0,0,0.15); margin-bottom: 10px;"></i>
-                <p style="font-size: 0.85rem;">Camera unavailable. Please upload a high-quality full body photo.</p>
-            </div>
+    /* Glow effect on image reveal */
+    @keyframes glowReveal {
+        0% { box-shadow: 0 0 0 rgba(192, 130, 97, 0); }
+        50% { box-shadow: 0 0 25px var(--accent-gold); opacity: 0.9; }
+        100% { box-shadow: 0 0 0 rgba(192, 130, 97, 0); }
+    }
+    /* Slow spin animation for luxury badge */
+    @keyframes spinSlow {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .animate-spin-slow {
+        animation: spinSlow 12s linear infinite;
+    }
+</style>
 
-            <!-- Dashed Body Outline overlay -->
-            <div id="silhouetteOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; opacity: 0.35;">
-                <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <path d="M50 15 C54 15, 56 18, 56 22 C56 26, 54 29, 50 29 C46 29, 44 26, 44 22 C44 18, 46 15, 50 15 Z 
-                             M50 29 C40 32, 36 38, 35 48 C34 58, 38 65, 38 75 C38 85, 42 95, 50 95 C58 95, 62 85, 62 75 C62 65, 66 58, 65 48 C64 38, 60 32, 50 29 Z" 
-                          fill="none" stroke="var(--accent-gold)" stroke-width="0.8" stroke-dasharray="2" />
-                </svg>
-            </div>
-            
-            <!-- Message overlay -->
-            <div id="cameraStatusMsg" style="position: absolute; bottom: 1rem; left: 5%; width: 90%; background: rgba(0,0,0,0.6); padding: 0.5rem; border-radius: 6px; font-size: 0.8rem; color: #fff; text-align: center;">
-                Position your full body within the frame
-            </div>
-        </div>
-
-        <!-- Controls -->
-        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <!-- Initial Live Controls -->
-            <button id="captureBtn" class="btn-gold" style="padding: 0.8rem 2rem; font-size: 0.95rem; letter-spacing: 1px;"><i class="fas fa-camera" style="margin-right: 8px;"></i> Capture Outfit Snap</button>
-            <label id="uploadFallbackBtn" class="btn-outline" style="padding: 0.8rem 2rem; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; margin: 0;">
-                <i class="fas fa-upload" style="margin-right: 8px;"></i> Upload Photo
-                <input type="file" id="fallbackFileInput" accept="image/png, image/jpeg" style="display: none;">
-            </label>
-
-            <!-- Snapped Controls (Hidden initially) -->
-            <button id="retakeBtn" class="btn-outline" style="padding: 0.8rem 2rem; font-size: 0.95rem; display: none;"><i class="fas fa-redo" style="margin-right: 8px;"></i> Retake</button>
-            <button id="continueBtn" class="btn-gold" style="padding: 0.8rem 2rem; font-size: 0.95rem; display: none; letter-spacing: 1px;">Continue <i class="fas fa-arrow-right" style="margin-left: 8px;"></i></button>
-        </div>
-    </div>
-
-    <!-- Progressive Loading Section (Hidden initially) -->
-    <div id="tryonLoadingSection" style="display: none; max-width: 600px; margin: 4rem auto; text-align: center;" class="reveal">
-        <h2 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-size: 2rem; font-family: 'Cormorant Garamond', serif;">AI VISION PROCESSING</h2>
-        
-        <!-- Premium Spinner -->
-        <div style="margin: 2rem 0; display: flex; justify-content: center;">
-            <div class="tryon-spinner"></div>
-        </div>
-        
-        <h3 id="progressLabel" style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.8rem;">Initializing AI engine...</h3>
-        
-        <!-- Progress Bar -->
-        <div style="width: 100%; height: 8px; background: var(--bg-tertiary); border-radius: 4px; overflow: hidden; margin-bottom: 2rem;">
-            <div id="progressBar" style="width: 0%; height: 100%; background: var(--accent-gold); transition: width 0.4s ease;"></div>
-        </div>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Executing visual mapping onto outfit items. Preserving faces, skin tones, hairstyles, and aesthetics.</p>
-    </div>
-
-    <!-- Results Section (Hidden initially) -->
-    <div id="tryonResultsSection" style="display: none; margin-top: 4rem;">
-        <div style="text-align: center; margin-bottom: 4rem;">
-            <h2 style="font-size: 2.5rem; color: var(--accent-gold); font-family: 'Cormorant Garamond', serif; margin-bottom: 0.5rem;">Your Try-On Gallery</h2>
-            <p style="color: var(--text-muted);">Browse how each outfit looks on you. Select outfits to reserve immediately.</p>
-        </div>
-
-        <!-- Progressive/Dynamic Grid -->
-        <div id="tryonGrid" class="premium-product-grid">
-            <!-- Dynamic Cards or skeleton loaders will be injected here -->
-        </div>
-    </div>
-
-</div>
-
-<!-- Reservation Modal -->
-<div id="productModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 10, 0.4); backdrop-filter: blur(8px); z-index: 10000; justify-content: center; align-items: center; padding: 2rem;" onclick="if(event.target == this) closeProductModal()">
-    <div class="glass" style="max-width: 800px; width: 100%; background: var(--bg-secondary); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; display: flex; flex-wrap: wrap; position: relative; box-shadow: var(--glass-shadow);">
-        
-        <!-- Close Button -->
-        <button onclick="closeProductModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: transparent; border: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; z-index: 10;"><i class="fas fa-times"></i></button>
-        
-        <!-- Left Side: Image -->
-        <div style="flex: 1; min-width: 300px; height: 450px; overflow: hidden; position: relative;">
-            <img id="modalProductImg" src="" alt="" style="width: 100%; height: 100%; object-fit: cover;">
-        </div>
-        
-        <!-- Right Side: Details -->
-        <div id="modalDetailsView" style="flex: 1.2; min-width: 320px; padding: 3rem; display: flex; flex-direction: column; justify-content: space-between;">
-            <div>
-                <span id="modalProductCategory" style="color: var(--accent-gold); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600;"></span>
-                <h2 id="modalProductName" style="font-size: 2.2rem; margin: 0.5rem 0 1rem; font-family: 'Cormorant Garamond', serif; font-weight: 700; color: var(--text-main);"></h2>
-                <div style="font-size: 1.5rem; color: var(--accent-gold); font-weight: 600; margin-bottom: 1.5rem;" id="modalProductPrice"></div>
-                
-                <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 2rem;">
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.4rem;">
-                        <span style="color: var(--text-muted);">SIZES AVAILABLE</span>
-                        <span id="modalProductSizes" style="color: var(--text-main); font-weight: 500;"></span>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="display: flex; gap: 1rem;">
-                <button class="btn-gold" style="width: 100%; padding: 0.8rem; font-size: 0.85rem; letter-spacing: 1px; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showFormView()">Reserve Outfit</button>
-            </div>
-        </div>
-
-        <!-- Right Side: Reservation Form (Updated, no body size metrics) -->
-        <div id="modalFormView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: space-between;">
-            <div>
-                <h3 style="color: var(--accent-gold); margin-bottom: 1.5rem; font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600;">Checkout Order</h3>
-                <form id="reservationForm" onsubmit="submitReservation(event)">
-                    <input type="hidden" id="reserveSuitName">
-                    <input type="hidden" id="reserveSuitPrice">
-                    
-                    <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
-                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">YOUR FULL NAME</label>
-                            <input type="text" id="reserveName" required style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">EMAIL ADDRESS</label>
-                            <input type="email" id="reserveEmail" required style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">PHONE NUMBER</label>
-                            <input type="tel" id="reservePhone" required style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
-                            <label style="font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px;">SELECT SIZE</label>
-                            <select id="reserveSize" style="background: var(--bg-main); border: 1px solid var(--glass-border); color: var(--text-main); padding: 0.5rem; border-radius: 6px; outline: none; font-family: 'Inter', sans-serif; font-size: 0.85rem;">
-                                <!-- Populated dynamically -->
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem;">
-                        <button type="submit" class="btn-gold" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; border: none; cursor: pointer; font-family: 'Inter', sans-serif;">Confirm Order</button>
-                        <button type="button" class="btn-outline" style="flex: 1; padding: 0.8rem; font-size: 0.85rem; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif;" onclick="showDetailsView()">Cancel</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Right Side: Reservation Success Animation -->
-        <div id="modalSuccessView" style="display: none; flex: 1.2; min-width: 320px; padding: 3rem; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-            <div class="success-checkmark-wrapper" style="margin-bottom: 2rem; position: relative; width: 100px; height: 100px;">
-                <div class="pulse-ring"></div>
-                <svg class="checkmark-svg" viewBox="0 0 52 52">
-                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
-                    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                </svg>
-            </div>
-            <h3 style="color: var(--accent-gold); font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 0.5rem; font-weight: 600; letter-spacing: 1px;">ORDER COMPLETED</h3>
-            <p style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 1.5rem; max-width: 280px; font-weight: 300; line-height: 1.5;">Your style reservation has been successfully booked in the control center.</p>
-        </div>
-    </div>
-</div>
-
+<!-- Load Tailwind & React CDNs -->
+<script src="https://cdn.tailwindcss.com"></script>
 <script>
-let stream = null;
-let capturedBase64 = null;
-let isMockStream = false;
-
-const webcam = document.getElementById('webcam');
-const snapshotPreview = document.getElementById('snapshotPreview');
-const mockCameraFeed = document.getElementById('mockCameraFeed');
-const scanningLine = document.getElementById('scanningLine');
-const captureBtn = document.getElementById('captureBtn');
-const uploadFallbackBtn = document.getElementById('uploadFallbackBtn');
-const fallbackFileInput = document.getElementById('fallbackFileInput');
-const retakeBtn = document.getElementById('retakeBtn');
-const continueBtn = document.getElementById('continueBtn');
-const tryonCaptureSection = document.getElementById('tryonCaptureSection');
-const tryonLoadingSection = document.getElementById('tryonLoadingSection');
-const tryonResultsSection = document.getElementById('tryonResultsSection');
-const tryonGrid = document.getElementById('tryonGrid');
-const progressLabel = document.getElementById('progressLabel');
-const progressBar = document.getElementById('progressBar');
-
-// Auto start webcam on page load
-async function initWebcam() {
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: 640, height: 480 },
-            audio: false
-        });
-        webcam.srcObject = stream;
-        document.getElementById('cameraStatusMsg').innerText = "Position your full body within the frame";
-    } catch (err) {
-        console.warn("Could not access camera, running simulated preview:", err);
-        isMockStream = true;
-        
-        // Hide webcam
-        webcam.style.display = 'none';
-        
-        // Show simulated feed and glowing laser line
-        mockCameraFeed.style.display = 'block';
-        scanningLine.style.display = 'block';
-        
-        document.getElementById('silhouetteOverlay').style.display = 'block';
-        document.getElementById('cameraStatusMsg').innerHTML = "<span style='color: var(--accent-gold);'><i class='fas fa-sync fa-spin'></i> Simulated Active scanner. Click Capture.</span>";
-        
-        const container = document.getElementById('cameraContainer');
-        container.style.aspectRatio = '3/4';
-        container.style.height = 'auto';
-        
-        captureBtn.style.display = 'inline-block';
-    }
-}
-
-// Snap photo from video stream or simulated feed
-captureBtn.addEventListener('click', () => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (isMockStream) {
-        canvas.width = mockCameraFeed.naturalWidth || 640;
-        canvas.height = mockCameraFeed.naturalHeight || 480;
-        ctx.drawImage(mockCameraFeed, 0, 0, canvas.width, canvas.height);
-        capturedBase64 = canvas.toDataURL('image/jpeg', 0.9);
-        
-        snapshotPreview.src = capturedBase64;
-        snapshotPreview.style.display = 'block';
-        mockCameraFeed.style.display = 'none';
-        scanningLine.style.display = 'none';
-        document.getElementById('silhouetteOverlay').style.display = 'none';
-    } else {
-        if (!stream) return;
-        canvas.width = webcam.videoWidth || 640;
-        canvas.height = webcam.videoHeight || 480;
-        ctx.drawImage(webcam, 0, 0, canvas.width, canvas.height);
-        capturedBase64 = canvas.toDataURL('image/jpeg', 0.9);
-        
-        snapshotPreview.src = capturedBase64;
-        snapshotPreview.style.display = 'block';
-        webcam.style.display = 'none';
-        document.getElementById('silhouetteOverlay').style.display = 'none';
-    }
-    
-    captureBtn.style.display = 'none';
-    uploadFallbackBtn.style.display = 'none';
-    retakeBtn.style.display = 'inline-block';
-    continueBtn.style.display = 'inline-block';
-});
-
-fallbackFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            capturedBase64 = event.target.result;
-            snapshotPreview.src = capturedBase64;
-            snapshotPreview.style.display = 'block';
-            webcam.style.display = 'none';
-            mockCameraFeed.style.display = 'none';
-            scanningLine.style.display = 'none';
-            document.getElementById('silhouetteOverlay').style.display = 'none';
-            
-            const errorPl = document.getElementById('cameraErrorPlaceholder');
-            if (errorPl) errorPl.style.display = 'none';
-            
-            const container = document.getElementById('cameraContainer');
-            container.style.height = 'auto';
-            container.style.aspectRatio = '3/4';
-            
-            captureBtn.style.display = 'none';
-            uploadFallbackBtn.style.display = 'none';
-            retakeBtn.style.display = 'inline-block';
-            continueBtn.style.display = 'inline-block';
-        };
-        reader.readAsDataURL(file);
-    }
-});
-
-retakeBtn.addEventListener('click', () => {
-    capturedBase64 = null;
-    snapshotPreview.src = '#';
-    snapshotPreview.style.display = 'none';
-    if (stream) {
-        webcam.style.display = 'block';
-        document.getElementById('silhouetteOverlay').style.display = 'block';
-        captureBtn.style.display = 'inline-block';
-        const container = document.getElementById('cameraContainer');
-        container.style.aspectRatio = '3/4';
-    } else if (isMockStream) {
-        mockCameraFeed.style.display = 'block';
-        scanningLine.style.display = 'block';
-        document.getElementById('silhouetteOverlay').style.display = 'block';
-        captureBtn.style.display = 'inline-block';
-    } else {
-        const errorPl = document.getElementById('cameraErrorPlaceholder');
-        if (errorPl) errorPl.style.display = 'block';
-        const container = document.getElementById('cameraContainer');
-        container.style.height = '240px';
-        container.style.aspectRatio = 'auto';
-    }
-    uploadFallbackBtn.style.display = 'inline-block';
-    retakeBtn.style.display = 'none';
-    continueBtn.style.display = 'none';
-});
-
-continueBtn.addEventListener('click', async () => {
-    if (!capturedBase64) return;
-    
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
-    
-    tryonCaptureSection.style.display = 'none';
-    tryonLoadingSection.style.display = 'block';
-    
-    progressLabel.innerText = "Uploading photo to WearWise server...";
-    progressBar.style.width = "10%";
-    
-    try {
-        const uploadRes = await fetch('/api/tryon/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: capturedBase64 })
-        });
-        
-        const uploadData = await uploadRes.json();
-        if (!uploadData.success) {
-            alert("Upload failed: " + uploadData.error);
-            resetToCapture();
-            return;
-        }
-        
-        const uploadId = uploadData.upload_id;
-        const products = uploadData.products;
-        
-        tryonLoadingSection.style.display = 'block';
-        tryonResultsSection.style.display = 'block';
-        
-        tryonGrid.innerHTML = products.map(p => `
-            <div class="premium-card" id="skeleton-card-${p.id}">
-                <div class="tryon-skeleton"></div>
-                <div class="card-content" style="padding: 1.5rem;">
-                    <div style="height: 1.2rem; background: rgba(0,0,0,0.05); margin-bottom: 0.6rem; border-radius: 4px;"></div>
-                    <div style="height: 0.8rem; width: 60%; background: rgba(0,0,0,0.05); border-radius: 4px;"></div>
-                </div>
-            </div>
-        `).join('');
-        
-        let completedCount = 0;
-        const totalCount = products.length;
-        
-        progressLabel.innerText = `Generating Outfit 1 of ${totalCount}...`;
-        progressBar.style.width = "20%";
-        
-        for (let i = 0; i < products.length; i++) {
-            const p = products[i];
-            progressLabel.innerText = `Generating Outfit ${i + 1} of ${totalCount}...`;
-            
-            try {
-                const genRes = await fetch(`/api/tryon/generate/${uploadId}/${p.id}`);
-                const responseText = await genRes.text();
-                
-                let genData = {};
-                try {
-                    genData = JSON.parse(responseText);
-                } catch (jsonErr) {
-                    console.error(jsonErr, responseText);
-                }
-                
-                if (genRes.ok && genData.success) {
-                    const card = document.getElementById(`skeleton-card-${p.id}`);
-                    if (card) {
-                        card.innerHTML = `
-                            <div class="card-image-wrapper" style="height: 350px;">
-                                <img src="${genData.image_url}" alt="${p.name}" style="width: 100%; height: 100%; object-fit: cover;">
-                            </div>
-                            <div class="card-content" style="padding: 1.5rem;">
-                                <div class="card-header" style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <h3 style="font-size: 1.2rem; color: var(--text-main); font-family: 'Cormorant Garamond', serif; font-weight: bold;">${p.name}</h3>
-                                    <span class="price-badge" style="color: var(--accent-gold); font-weight: 600;">₹${p.price}</span>
-                                </div>
-                                <p class="card-category" style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.8rem; text-transform: uppercase;">${p.category}</p>
-                                <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-top: 1rem;">
-                                    <span class="size-indicator" style="font-size: 0.85rem; color: var(--text-muted);">Sizes: ${p.sizes}</span>
-                                    <button class="btn-gold btn-sm" style="padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 4px;" onclick="openProductModal('${p.name}', '${genData.image_url}', '${p.price}', '${p.sizes}', '${p.category}')">Add To Cart</button>
-                                </div>
-                            </div>
-                        `;
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    luxury: {
+                        blue: 'var(--accent-gold)',
+                        blueHover: 'var(--accent-gold-hover)',
+                        dark: 'var(--text-main)',
+                        gray: 'var(--bg-secondary)',
+                        lightBorder: 'var(--glass-border)'
                     }
-                } else if (genData.error === "GPU_RUNTIME_REQUIRED") {
-                    handleGpuRuntimeRequired(products, capturedBase64);
-                    return;
-                } else {
-                    console.error(p.id, genData.error || responseText);
+                },
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                    serif: ['Cormorant Garamond', 'serif']
                 }
-            } catch (err) {
-                console.error(p.id, err);
             }
-            
-            completedCount++;
-            const percent = 20 + Math.floor((completedCount / totalCount) * 80);
-            progressBar.style.width = `${percent}%`;
         }
-        
-        progressLabel.innerText = "All outfits generated successfully!";
-        progressBar.style.width = "100%";
-        setTimeout(() => {
-            tryonLoadingSection.style.display = 'none';
-        }, 1500);
-        
-    } catch (error) {
-        console.error(error);
-        alert("An error occurred during try-on processing. Please try again.");
-        resetToCapture();
     }
-});
+</script>
 
-function resetToCapture() {
-    tryonCaptureSection.style.display = 'block';
-    tryonLoadingSection.style.display = 'none';
-    tryonResultsSection.style.display = 'none';
-    initWebcam();
-}
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-function handleGpuRuntimeRequired(products, userImgBase64) {
-    tryonLoadingSection.style.display = 'none';
-    
-    const headerContainer = tryonResultsSection.querySelector('div');
-    headerContainer.innerHTML = `
-        <div class="glass" style="max-width: 900px; margin: 0 auto 3rem; padding: 2rem; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--bg-tertiary); text-align: left; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
-            <div style="font-size: 2.5rem; color: var(--accent-gold);"><i class="fas fa-microchip"></i></div>
-            <div style="flex: 1; min-width: 250px;">
-                <h3 style="color: var(--accent-gold); margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase;">CatVTON Backend Pipeline Initialized</h3>
-                <p style="color: var(--text-main); font-size: 0.88rem; line-height: 1.5; margin: 0;">
-                    The real AI Virtual Try-On pipeline (CatVTON) is successfully integrated and waiting to run. Live neural image generation requires a CUDA-enabled GPU runtime environment. 
-                </p>
-                <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; border-top: 1px solid var(--glass-border); padding-top: 0.8rem;">
-                    Status: Awaiting GPU Execution Environment
-                </div>
-            </div>
-        </div>
-        <div style="text-align: center; margin-bottom: 3rem;">
-            <h2 style="font-size: 2.5rem; color: var(--accent-gold); font-family: 'Cormorant Garamond', serif; margin-bottom: 0.5rem;">Virtual Try-On Dataset</h2>
-            <p style="color: var(--text-muted);">Configure custom reservations for your target silhouette below.</p>
-        </div>
-    `;
-    
-    tryonGrid.innerHTML = products.map(p => `
-        <div class="premium-card">
-            <div class="card-image-wrapper" style="display: flex; height: 350px;">
-                <div style="flex: 1; height: 100%; border-right: 1px solid var(--glass-border); position: relative; background: var(--bg-tertiary);">
-                    <img src="/static/products/${p.image}" alt="${p.name}" style="width: 100%; height: 100%; object-fit: cover;">
-                    <div style="position: absolute; bottom: 0.5rem; left: 0.5rem; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">Garment</div>
-                </div>
-                <div style="flex: 1; height: 100%; position: relative; background: var(--bg-main);">
-                    <img src="${userImgBase64}" alt="Target User" style="width: 100%; height: 100%; object-fit: cover;">
-                    <div style="position: absolute; bottom: 0.5rem; left: 0.5rem; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">Target User</div>
-                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 90%; background: rgba(255,255,255,0.9); border: 1px dashed var(--accent-gold); padding: 0.5rem; border-radius: 8px; font-size: 0.72rem; color: var(--text-main); letter-spacing: 0.5px; font-weight: bold;">
-                        <i class="fas fa-lock" style="margin-bottom: 4px; color: var(--accent-gold);"></i><br>Awaiting GPU
-                    </div>
-                </div>
-            </div>
-            <div class="card-content" style="padding: 1.5rem;">
-                <div class="card-header" style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <h3 style="font-size: 1.2rem; color: var(--text-main); font-family: 'Cormorant Garamond', serif; font-weight: bold;">${p.name}</h3>
-                    <span class="price-badge" style="color: var(--accent-gold); font-weight: 600;">₹${p.price}</span>
-                </div>
-                <p class="card-category" style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.8rem; text-transform: uppercase;">${p.category}</p>
-                <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--glass-border); padding-top: 1rem; margin-top: 1rem;">
-                    <span class="size-indicator" style="font-size: 0.85rem; color: var(--text-muted);">Sizes: ${p.sizes}</span>
-                    <button class="btn-gold btn-sm" style="padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 4px;" onclick="openProductModal('${p.name}', '/static/products/${p.image}', '${p.price}', '${p.sizes}', '${p.category}')">Reserve Outfit</button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
+<div id="tryon-react-root" style="padding-top: 9rem;" class="pb-16 bg-transparent"></div>
 
-function openProductModal(name, imgUrl, price, sizes, cat) {
-    document.getElementById('modalProductName').innerText = name;
-    document.getElementById('modalProductImg').src = imgUrl;
-    document.getElementById('modalProductPrice').innerText = '₹' + price;
-    document.getElementById('modalProductSizes').innerText = sizes;
-    document.getElementById('modalProductCategory').innerText = cat;
-    
-    document.getElementById('reserveSuitName').value = name;
-    document.getElementById('reserveSuitPrice').value = price;
-    
-    // Dynamically populate select dropdown for sizes
-    const select = document.getElementById('reserveSize');
-    select.innerHTML = '';
-    const arr = sizes.split(',');
-    arr.forEach(s => {
-        const option = document.createElement('option');
-        option.value = s.strip ? s.strip() : s.trim();
-        option.innerText = s.strip ? s.strip() : s.trim();
-        select.appendChild(option);
-    });
-    
-    showDetailsView();
-    document.getElementById('productModal').style.display = 'flex';
-}
+<!-- React App Mounting -->
+<script type="text/babel">
+{% raw %}
+    const { useState, useEffect, useRef } = React;
 
-function closeProductModal() {
-    document.getElementById('productModal').style.display = 'none';
-}
+    const MOCK_PIXEL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    const DEFAULT_MODEL_PIC = "/static/try on formals/try on formal (4).png";
 
-function showFormView() {
-    document.getElementById('modalDetailsView').style.display = 'none';
-    document.getElementById('modalSuccessView').style.display = 'none';
-    document.getElementById('modalFormView').style.display = 'flex';
-}
-
-function showDetailsView() {
-    document.getElementById('modalFormView').style.display = 'none';
-    document.getElementById('modalSuccessView').style.display = 'none';
-    document.getElementById('modalDetailsView').style.display = 'flex';
-}
-
-function submitReservation(e) {
-    e.preventDefault();
-    
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerText;
-    submitBtn.disabled = true;
-    submitBtn.innerText = "CHECKING OUT...";
-    
-    // Checkout order payloads (updated schema)
-    const payload = {
-        name: document.getElementById('reserveName').value,
-        email: document.getElementById('reserveEmail').value,
-        phone: document.getElementById('reservePhone').value,
-        size: document.getElementById('reserveSize').value,
-        product_id: 1, // Fallback placeholder
+    // Dynamic base model mapper to align face and background perfectly
+    const getBaseModelImage = (category) => {
+        const cat = category ? category.toLowerCase() : "";
+        if (cat.includes("formal")) {
+            return "/static/try on formals/try on formal (4).png";
+        } else if (cat.includes("festive") || cat.includes("wedding")) {
+            return "/static/try on festive/try on festive (3).png";
+        } else if (cat.includes("college")) {
+            return "/static/try on college/Try on _College(2).png";
+        }
+        return DEFAULT_MODEL_PIC;
     };
 
-    fetch('/api/cart/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: 1, size: payload.size }) // Add to cart
-    })
-    .then(() => {
-        return fetch('/api/cart/checkout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: payload.name,
-                email: payload.email,
-                phone: payload.phone
-            })
-        });
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('modalFormView').style.display = 'none';
-            document.getElementById('modalSuccessView').style.display = 'flex';
-            document.getElementById('reservationForm').reset();
-            submitBtn.disabled = false;
-            submitBtn.innerText = originalText;
-            
-            setTimeout(() => {
-                closeProductModal();
-            }, 4000);
-        } else {
-            alert('Failed to checkout order: ' + data.message);
-            submitBtn.disabled = false;
-            submitBtn.innerText = originalText;
-        }
-    })
-    .catch(err => {
-        alert('Server checkout connection failed: ' + err);
-        submitBtn.disabled = false;
-        submitBtn.innerText = originalText;
-    });
-}
+    // Random rotating premium loader messages
+    const loaderMessages = [
+        "Detecting Body...",
+        "Matching Outfit...",
+        "Rendering Preview...",
+        "Estimating Fit...",
+        "Preparing Smart Preview...",
+        "Optimizing Image...",
+        "Generating Preview...",
+        "Finalizing..."
+    ];
 
-initWebcam();
+    function TryOnApp() {
+        const [products, setProducts] = useState([]);
+        const [loadingProducts, setLoadingProducts] = useState(true);
+        const [activeCategory, setActiveCategory] = useState("All");
+
+        // Reference model state (Left Panel)
+        const [uploadedImage, setUploadedImage] = useState(DEFAULT_MODEL_PIC);
+        const [isCameraActive, setIsCameraActive] = useState(false);
+        const [uploadId, setUploadId] = useState(null);
+
+        // Virtual Try-On Preview State (Right Panel)
+        const [selectedProduct, setSelectedProduct] = useState(null);
+        const [tryonResultUrl, setTryonResultUrl] = useState(null);
+        const [viewMode, setViewMode] = useState("preview"); // "original" or "preview"
+        const [imageError, setImageError] = useState(false);
+
+        // Loader & Animation states
+        const [isProcessing, setIsProcessing] = useState(false);
+        const [progress, setProgress] = useState(0);
+        const [loaderText, setLoaderText] = useState(loaderMessages[0]);
+        const [revealGlow, setRevealGlow] = useState(false);
+
+        // Wishlist & Pregenerated URL cache
+        const [wishlist, setWishlist] = useState([]);
+        const [tryonImagesCache, setTryonImagesCache] = useState({});
+
+        // Form Booking modal
+        const [showBookingModal, setShowBookingModal] = useState(false);
+        const [bookingName, setBookingName] = useState("");
+        const [bookingEmail, setBookingEmail] = useState("");
+        const [bookingPhone, setBookingPhone] = useState("");
+        const [bookingSize, setBookingSize] = useState("M");
+        const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
+        const [bookingSuccess, setBookingSuccess] = useState(false);
+
+        const videoRef = useRef(null);
+        const streamRef = useRef(null);
+
+        // Initial catalog fetch
+        useEffect(() => {
+            fetchCatalog();
+        }, []);
+
+        const fetchCatalog = async () => {
+            try {
+                const response = await fetch('/api/tryon/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: MOCK_PIXEL })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    setProducts(data.products || []);
+                    setUploadId(data.upload_id);
+                }
+            } catch (err) {
+                console.error("Failed to load try-on catalog", err);
+            } finally {
+                setLoadingProducts(false);
+            }
+        };
+
+        // Extract filename parts
+        const getProductDetails = (product) => {
+            if (!product || !product.image) return { num: 1, categorySingular: "Formal" };
+            const filename = product.image.split('/').pop();
+            const match = filename.match(/(\d+)/);
+            const num = match ? match[1] : product.id;
+            
+            const cat = product.category;
+            const categorySingular = cat.endsWith('s') ? cat.slice(0, -1) : cat;
+            return { num, categorySingular };
+        };
+
+        // Preload try-on image silently on hover
+        const handleProductHover = async (product) => {
+            const currentUploadId = uploadId;
+            if (!currentUploadId || tryonImagesCache[product.id]) return;
+            try {
+                const response = await fetch(`/api/tryon/generate/${currentUploadId}/${product.id}`);
+                const data = await response.json();
+                if (data.success) {
+                    setTryonImagesCache(prev => ({
+                        ...prev,
+                        [product.id]: data.image_url
+                    }));
+                    const img = new Image();
+                    img.src = data.image_url;
+                }
+            } catch (err) {
+                // Ignore silent prefetch errors
+            }
+        };
+
+        // Reference photo handlers
+        const handleFileUpload = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    const base64Img = event.target.result;
+                    setUploadedImage(base64Img);
+                    setIsCameraActive(false);
+                    stopWebcam();
+                    
+                    try {
+                        const response = await fetch('/api/tryon/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: base64Img })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            setUploadId(data.upload_id);
+                        }
+                    } catch (err) {
+                        console.error("Upload error:", err);
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        const startWebcam = async () => {
+            try {
+                setIsCameraActive(true);
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 },
+                    audio: false
+                });
+                videoRef.current.srcObject = stream;
+                streamRef.current = stream;
+            } catch (err) {
+                console.error("Camera fail:", err);
+                alert("Could not access camera. Fallback to file upload.");
+                setIsCameraActive(false);
+            }
+        };
+
+        const stopWebcam = () => {
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
+            }
+        };
+
+        const capturePhoto = () => {
+            if (!videoRef.current) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = videoRef.current.videoWidth || 640;
+            canvas.height = videoRef.current.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+            const base64Img = canvas.toDataURL('image/jpeg', 0.9);
+            setUploadedImage(base64Img);
+            setIsCameraActive(false);
+            stopWebcam();
+
+            fetch('/api/tryon/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Img })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setUploadId(data.upload_id);
+                }
+            })
+            .catch(err => console.error("Upload error:", err));
+        };
+
+        // Selecting another outfit trigger
+        const handleSelectProduct = async (product) => {
+            setSelectedProduct(product);
+            setIsProcessing(true);
+            setProgress(0);
+            setImageError(false);
+            setViewMode("preview");
+
+            // 1. Progress Loader Loop (2 seconds total loader duration)
+            const intervalTime = 2000 / 100;
+            let currentProgress = 0;
+            const progressTimer = setInterval(() => {
+                currentProgress += 1;
+                setProgress(currentProgress);
+                
+                if (currentProgress % 15 === 0) {
+                    const randomMsg = loaderMessages[Math.floor(Math.random() * loaderMessages.length)];
+                    setLoaderText(randomMsg);
+                }
+
+                if (currentProgress >= 100) {
+                    clearInterval(progressTimer);
+                }
+            }, intervalTime);
+
+            // 2. Resolve mapping via cached data or active API generation
+            try {
+                let resolvedUrl = tryonImagesCache[product.id];
+                const currentUploadId = uploadId;
+                
+                if (!resolvedUrl && currentUploadId) {
+                    const response = await fetch(`/api/tryon/generate/${currentUploadId}/${product.id}`);
+                    const data = await response.json();
+                    if (data.success) {
+                        resolvedUrl = data.image_url;
+                        setTryonImagesCache(prev => ({
+                            ...prev,
+                            [product.id]: data.image_url
+                        }));
+                    }
+                }
+
+                // Schedule final state changes after loader completes
+                setTimeout(() => {
+                    clearInterval(progressTimer);
+                    setProgress(100);
+                    if (resolvedUrl) {
+                        setTryonResultUrl(resolvedUrl);
+                        setRevealGlow(true);
+                        setTimeout(() => setRevealGlow(false), 1000);
+                    } else {
+                        setImageError(true);
+                        setTryonResultUrl(null);
+                    }
+                    setIsProcessing(false);
+                }, 2200);
+
+            } catch (err) {
+                console.error("Tryon generation failed:", err);
+                setTimeout(() => {
+                    clearInterval(progressTimer);
+                    setImageError(true);
+                    setTryonResultUrl(null);
+                    setIsProcessing(false);
+                }, 2200);
+            }
+        };
+
+        // Wishlist toggler
+        const toggleWishlist = (productId) => {
+            setWishlist(prev => 
+                prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
+            );
+        };
+
+        // Reservation bookings
+        const handleBookingSubmit = async (e) => {
+            e.preventDefault();
+            setIsSubmittingBooking(true);
+            try {
+                // Cart save first
+                await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_id: selectedProduct.id, size: bookingSize })
+                });
+
+                // Reservation payload
+                const res = await fetch('/api/cart/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: bookingName,
+                        email: bookingEmail,
+                        phone: bookingPhone
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setBookingSuccess(true);
+                    if (window.updateCartBadge) window.updateCartBadge();
+                } else {
+                    alert("Reservation error: " + data.message);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Connection failed.");
+            } finally {
+                setIsSubmittingBooking(false);
+            }
+        };
+
+        const filteredProducts = products.filter(p => {
+            if (activeCategory === "All") return true;
+            return p.category.toLowerCase() === activeCategory.toLowerCase();
+        });
+
+        return (
+            <div className="max-w-7xl mx-auto px-6 relative select-none">
+                
+
+                {/* TWO-PANEL INTERACTIVE CORE SPLIT */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+                    
+                    {/* LEFT PANEL: Reference Model / Upload Placeholder */}
+                    <div className="glass rounded-3xl p-6 flex flex-col justify-between min-h-[520px]">
+                        <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-xs uppercase tracking-widest text-gray-400 font-bold">Reference Model</span>
+                                <span className="text-[10px] text-luxury-blue uppercase tracking-wider font-bold">Active Base</span>
+                            </div>
+
+                            {/* VIRTUAL TRY-ON Banner Card */}
+                            <div className="relative rounded-2xl overflow-hidden aspect-[2.3/1] mb-6 flex items-center bg-cover bg-center border border-gray-200/10" style={{ backgroundImage: "url('/static/tryon_left_banner.png')" }}>
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/35 to-transparent"></div>
+                                <div className="relative z-10 p-5 flex flex-col justify-between h-full w-full text-white animate-fade-in">
+                                    <div>
+                                        <h3 className="text-lg font-serif tracking-wider font-bold text-gray-100">VIRTUAL TRY-ON</h3>
+                                        <p className="text-[9px] text-gray-300 mt-0.5 font-light">See it. Style it. Own it.</p>
+                                    </div>
+                                    
+                                    {/* Steps with indicators */}
+                                    <div className="flex items-center justify-between gap-1 mt-auto">
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                                                <svg className="w-3.5 h-3.5 text-luxury-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                                                </svg>
+                                            </div>
+                                            <span className="text-[7px] mt-1 font-semibold tracking-tight text-gray-200">Pick Your<br/>Favorite Outfit</span>
+                                        </div>
+                                        <span className="text-[9px] text-gray-400">➔</span>
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                                                <svg className="w-3.5 h-3.5 text-luxury-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                                </svg>
+                                            </div>
+                                            <span className="text-[7px] mt-1 font-semibold tracking-tight text-gray-200">Upload or Use<br/>Your Camera</span>
+                                        </div>
+                                        <span className="text-[9px] text-gray-400">➔</span>
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="w-7 h-7 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                                                <svg className="w-3.5 h-3.5 text-luxury-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+                                                </svg>
+                                            </div>
+                                            <span className="text-[7px] mt-1 font-semibold tracking-tight text-gray-200">See the Perfect<br/>Fit Instantly</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Dotted Upload Box or Camera Video */}
+                            <div className="flex justify-center items-center relative aspect-[3.2/2.1] bg-black/10 dark:bg-black/40 rounded-2xl overflow-hidden border border-dashed border-gray-500/30 dark:border-gray-800/60 mb-6">
+                                {isCameraActive ? (
+                                    <div className="absolute inset-0 flex flex-col justify-end items-center">
+                                        <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover absolute inset-0" />
+                                        <div className="flex gap-3 mb-4 z-10">
+                                            <button onClick={capturePhoto} className="bg-luxury-blue text-white text-[10px] uppercase font-bold tracking-wider px-4 py-2 rounded-full shadow-lg">Capture Snap</button>
+                                            <button onClick={() => { setIsCameraActive(false); stopWebcam(); }} className="bg-black/60 text-white text-[10px] uppercase font-bold tracking-wider px-4 py-2 rounded-full">Cancel</button>
+                                        </div>
+                                    </div>
+                                ) : uploadedImage === DEFAULT_MODEL_PIC ? (
+                                    <div className="text-center p-6">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-8 h-8 mx-auto mb-3 text-luxury-blue">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+                                        </svg>
+                                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-gray-100">
+                                            REPLACE PHOTO
+                                        </h4>
+                                        <p className="text-[9px] text-gray-400 mt-1 max-w-[220px] leading-relaxed mx-auto">
+                                            Upload your photo or use camera to get started with virtual try-on
+                                        </p>
+                                        <span className="text-[8px] text-gray-500 mt-1 block">
+                                            .JPG, .PNG up to 10MB
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <img src={uploadedImage} alt="Reference photo" className="w-full h-full object-contain animate-fade-in" />
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Controls & Footer */}
+                        <div>
+                            <div className="flex gap-4">
+                                <label className="flex-1 bg-luxury-blue hover:bg-luxury-blueHover text-white py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider text-center cursor-pointer transition-all active:scale-95 shadow-md flex items-center justify-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3V15" />
+                                    </svg>
+                                    UPLOAD PHOTO
+                                    <input type="file" onChange={handleFileUpload} accept="image/*" className="hidden" />
+                                </label>
+                                <button onClick={startWebcam} className="flex-1 bg-white dark:bg-gray-800 border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all hover:bg-gray-50 dark:hover:bg-gray-900 active:scale-95 flex items-center justify-center gap-1.5">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                    </svg>
+                                    OPEN CAMERA
+                                </button>
+                            </div>
+                            <p className="text-center text-[8.5px] text-gray-500 mt-3">
+                                🔒 Your privacy is our priority. Images are not stored.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* RIGHT PANEL: Virtual Try-On Preview */}
+                    <div className="glass rounded-3xl p-6 flex flex-col justify-between min-h-[520px]">
+                        <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-xs uppercase tracking-widest text-gray-400 font-bold">Try-On Output</span>
+                                {/* Toggle switcher */}
+                                {selectedProduct && tryonResultUrl && !isProcessing && (
+                                    <div className="flex items-center gap-1 border border-gray-100 dark:border-gray-800 p-0.5 rounded-lg bg-gray-50 dark:bg-gray-950">
+                                        <button 
+                                            onClick={() => setViewMode("original")}
+                                            className={`px-3 py-1 rounded-md text-[9px] uppercase tracking-wider font-bold transition-all ${viewMode === "original" ? 'bg-white dark:bg-gray-800 text-luxury-blue shadow-sm' : 'text-gray-400'}`}
+                                        >
+                                            Original
+                                        </button>
+                                        <button 
+                                            onClick={() => setViewMode("preview")}
+                                            className={`px-3 py-1 rounded-md text-[9px] uppercase tracking-wider font-bold transition-all ${viewMode === "preview" ? 'bg-white dark:bg-gray-800 text-luxury-blue shadow-sm' : 'text-gray-400'}`}
+                                        >
+                                            Preview
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* TRY-ON OUTPUT Banner Card */}
+                            <div className="relative rounded-2xl overflow-hidden aspect-[2.3/1] mb-6 flex items-center bg-cover bg-center border border-gray-200/10" style={{ backgroundImage: "url('/static/tryon_right_banner.png')" }}>
+                                <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/35 to-transparent"></div>
+                                <div className="relative z-10 p-5 flex flex-col justify-between h-full w-full text-white animate-fade-in">
+                                    <div className="max-w-[80%] my-auto text-left">
+                                        <h3 className="text-lg font-serif tracking-wider font-bold text-gray-100 leading-tight">Your Style.<br/>Your Fit.<br/>Your Confidence.</h3>
+                                        <p className="text-[8px] text-gray-300 mt-1 font-light">Experience how every outfit looks made for you.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Interactive Output Box */}
+                            <div className="flex justify-center items-center relative aspect-[3.2/2.1] bg-black/10 dark:bg-black/40 rounded-2xl overflow-hidden border border-gray-250/10 shadow-inner">
+                                {isProcessing ? (
+                                    /* Glassmorphism AI Loader Overlay */
+                                    <div className="absolute inset-0 bg-white/40 dark:bg-black/40 backdrop-blur-md flex flex-col justify-center items-center p-6 z-20">
+                                        <div className="w-full max-w-xs glass rounded-2xl p-6 flex flex-col items-center">
+                                            <div className="relative w-12 h-12 mb-4">
+                                                <div className="absolute inset-0 border-2 border-gray-200 dark:border-gray-700 rounded-full"></div>
+                                                <div className="absolute inset-0 border-2 border-luxury-blue border-t-transparent rounded-full animate-spin"></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold uppercase tracking-widest text-luxury-blue mb-4 block animate-pulse">
+                                                {loaderText}
+                                            </span>
+                                            <div className="w-full h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-2">
+                                                <div className="animated-grad h-full transition-all duration-100" style={{ width: `${progress}%` }}></div>
+                                            </div>
+                                            <span className="text-[9px] font-semibold text-gray-400 tracking-wider">
+                                                ANALYZING SYNTHESIS {progress}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : null}
+
+                                {selectedProduct ? (
+                                    imageError ? (
+                                        <div className="flex flex-col items-center justify-center text-center p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl max-w-xs">
+                                            <div className="text-xl text-gray-300 dark:text-gray-700 mb-2">✦</div>
+                                            <h4 className="text-sm font-serif font-semibold text-gray-600 dark:text-gray-300">Preview Coming Soon</h4>
+                                            <p className="text-[10px] text-gray-400 mt-1 font-light leading-relaxed">
+                                                We are currently mapping this custom model size to our server network.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <img 
+                                            src={viewMode === "preview" && tryonResultUrl ? tryonResultUrl : uploadedImage} 
+                                            alt="Tryon Result" 
+                                            className={`w-full h-full object-contain transition-all duration-700 ${revealGlow ? 'scale-102 blur-sm' : 'scale-100 blur-0'} animate-fade-in`}
+                                        />
+                                    )
+                                ) : (
+                                    <div className="text-center p-6 flex flex-col items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-8 h-8 mx-auto mb-3 text-luxury-blue">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 21l-.813-5.096L3 15l5.096-.813L9 9l.813 5.096L15 15l-5.096.813ZM19.5 5.25l-.45 1.8-1.8.45 1.8.45.45 1.8.45-1.8 1.8-.45-1.8-.45-.45-1.8ZM20.25 12.75l-.3 1.2-1.2.3 1.2.3.3 1.2.3-1.2 1.2-.3-1.2-.3-.3-1.2Z" />
+                                        </svg>
+                                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-900 dark:text-gray-100">
+                                            YOUR TRY-ON WILL APPEAR HERE
+                                        </h4>
+                                        <p className="text-[9px] text-gray-400 mt-1 max-w-[240px] leading-relaxed mx-auto">
+                                            Select an outfit and upload your photo to see the virtual try-on preview
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Apply & See Results Full-Width Button */}
+                        <div className="mt-6">
+                            <button 
+                                onClick={() => {
+                                    if (selectedProduct) {
+                                        handleSelectProduct(selectedProduct);
+                                    } else {
+                                        alert("Please select a garment from the catalog first.");
+                                    }
+                                }}
+                                className="w-full bg-white dark:bg-gray-800 border border-gray-250 dark:border-gray-700 text-gray-950 dark:text-white py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-gray-50 dark:hover:bg-gray-900 transition-all flex items-center justify-center gap-2 active:scale-98 shadow-md"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 text-luxury-blue animate-pulse">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 21l-.813-5.096L3 15l5.096-.813L9 9l.813 5.096L15 15l-5.096.813ZM19.5 5.25l-.45 1.8-1.8.45 1.8.45.45 1.8.45-1.8 1.8-.45-1.8-.45-.45-1.8ZM20.25 12.75l-.3 1.2-1.2.3 1.2.3.3 1.2.3-1.2 1.2-.3-1.2-.3-.3-1.2Z" />
+                                </svg>
+                                APPLY & SEE RESULTS
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* CATALOG SELECTION LIST CONTAINER */}
+                <div className="border-t border-gray-100 dark:border-gray-800 pt-10">
+                    
+                    {/* Catalog grid navigation */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-5 mb-8 gap-4">
+                        <div>
+                            <h2 className="text-xl font-serif text-gray-900 dark:text-gray-100 font-light">Garment Catalog</h2>
+                            <p className="text-[10px] text-gray-400 font-light mt-0.5">Select outfits to render onto the reference model canvas.</p>
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="flex gap-1 border border-gray-100 dark:border-gray-800 p-1 rounded-xl bg-gray-50 dark:bg-gray-950 text-[10px]">
+                            {["All", "Formals", "Festive", "College"].map(cat => (
+                                <button 
+                                    key={cat}
+                                    onClick={() => setActiveCategory(cat)}
+                                    className={`px-4 py-2 rounded-lg font-bold tracking-wider uppercase transition-all ${activeCategory === cat ? 'bg-white dark:bg-gray-800 text-luxury-blue shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Catalog grid cards */}
+                    {loadingProducts ? (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {[1, 2, 3, 4].map(idx => (
+                                <div key={idx} className="animate-pulse bg-gray-50 dark:bg-gray-900 h-80 rounded-2xl border border-gray-100 dark:border-gray-800"></div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            {filteredProducts.map(product => {
+                                const { num, categorySingular } = getProductDetails(product);
+                                const isSelected = selectedProduct?.id === product.id;
+
+                                return (
+                                    <div 
+                                        key={product.id}
+                                        onClick={() => handleSelectProduct(product)}
+                                        onMouseEnter={() => handleProductHover(product)}
+                                        className={`group glass rounded-2xl ${isSelected ? 'ring-2 ring-luxury-blue' : ''} overflow-hidden hover:-translate-y-1 transition-all duration-300 relative cursor-pointer flex flex-col justify-between`}
+                                    >
+                                        <div className="aspect-[3/4] w-full overflow-hidden bg-gray-50 relative">
+                                            <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-102" />
+                                            
+                                            {/* Glow circle overlay */}
+                                            {isSelected && (
+                                                <div className="absolute inset-0 bg-luxury-blue/5 backdrop-blur-[1px] flex items-center justify-center">
+                                                    <span className="bg-luxury-blue text-white px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-widest shadow-md">
+                                                        Selected
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {/* Wishlist toggle */}
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleWishlist(product.id);
+                                                }}
+                                                className="absolute top-3 right-3 h-8 w-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center shadow text-gray-500 hover:text-red-500 transition-colors"
+                                            >
+                                                {wishlist.includes(product.id) ? "♥" : "♡"}
+                                            </button>
+                                        </div>
+
+                                        <div className="p-4">
+                                            <div className="flex justify-between items-start mb-1 gap-2">
+                                                <h4 className="text-xs font-serif font-bold text-gray-900 dark:text-gray-100 group-hover:text-luxury-blue transition-colors leading-snug">
+                                                    {categorySingular} ({num})
+                                                </h4>
+                                                <span className="text-xs font-serif text-gray-700 dark:text-gray-300">
+                                                    ₹{product.price}
+                                                </span>
+                                            </div>
+                                            <span className="text-[9px] font-light text-gray-400 block mb-2">{product.name}</span>
+                                            <div className="flex justify-between items-center text-[9px] border-t border-gray-100 dark:border-gray-800 pt-2 text-gray-400">
+                                                <span>Sizes: {product.sizes}</span>
+                                                <span>Try-On Preview</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* MODAL: Checkout / Booking Form */}
+                {showBookingModal && (
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-[20000] flex justify-center items-center p-6">
+                        <div className="bg-white dark:bg-gray-900 max-w-md w-full rounded-3xl p-8 border border-gray-100 dark:border-gray-800 shadow-2xl relative">
+                            <button 
+                                onClick={() => setShowBookingModal(false)}
+                                className="absolute top-4 right-4 h-8 w-8 bg-gray-100 dark:bg-gray-800 text-gray-500 rounded-full flex items-center justify-center text-xs transition"
+                            >
+                                ✕
+                            </button>
+
+                            {!bookingSuccess ? (
+                                <form onSubmit={handleBookingSubmit} className="space-y-4">
+                                    <div className="text-center mb-6">
+                                        <h3 className="text-xl font-serif text-gray-900 dark:text-gray-100">Reserve Outfit Look</h3>
+                                        <p className="text-[10px] text-gray-400 mt-1 font-light">Secure this coordinate mapping under your name.</p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex flex-col gap-1 text-[10px]">
+                                            <label className="text-gray-400 uppercase font-semibold tracking-wider">FullName</label>
+                                            <input 
+                                                type="text" 
+                                                required 
+                                                value={bookingName}
+                                                onChange={(e) => setBookingName(e.target.value)}
+                                                className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 p-3 rounded-xl outline-none focus:border-luxury-blue text-xs"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1 text-[10px]">
+                                            <label className="text-gray-400 uppercase font-semibold tracking-wider">Email Address</label>
+                                            <input 
+                                                type="email" 
+                                                required 
+                                                value={bookingEmail}
+                                                onChange={(e) => setBookingEmail(e.target.value)}
+                                                className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 p-3 rounded-xl outline-none focus:border-luxury-blue text-xs"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1 text-[10px]">
+                                            <label className="text-gray-400 uppercase font-semibold tracking-wider">Phone Number</label>
+                                            <input 
+                                                type="tel" 
+                                                required 
+                                                value={bookingPhone}
+                                                onChange={(e) => setBookingPhone(e.target.value)}
+                                                className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 p-3 rounded-xl outline-none focus:border-luxury-blue text-xs"
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-1 text-[10px]">
+                                            <label className="text-gray-400 uppercase font-semibold tracking-wider">Select Size</label>
+                                            <select 
+                                                value={bookingSize} 
+                                                onChange={(e) => setBookingSize(e.target.value)}
+                                                className="w-full bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-800 p-3 rounded-xl outline-none focus:border-luxury-blue text-xs"
+                                            >
+                                                {selectedProduct?.sizes.split(',').map(s => {
+                                                    const cleanSize = s.trim();
+                                                    return <option key={cleanSize} value={cleanSize}>{cleanSize}</option>;
+                                                })}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        type="submit" 
+                                        disabled={isSubmittingBooking}
+                                        className="w-full bg-luxury-blue hover:bg-luxury-blueHover text-white py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all disabled:bg-gray-400 flex items-center justify-center shadow-lg"
+                                    >
+                                        {isSubmittingBooking ? "Securing Style..." : "Confirm Secure Reservation"}
+                                    </button>
+                                </form>
+                            ) : (
+                                <div className="text-center py-6 flex flex-col items-center">
+                                    <div className="h-14 w-14 bg-green-50 rounded-full flex items-center justify-center text-green-500 text-xl font-bold mb-4 animate-bounce">
+                                        ✓
+                                    </div>
+                                    <h3 className="text-xl font-serif text-gray-900 dark:text-gray-100">Style Secured</h3>
+                                    <p className="text-[10px] text-gray-400 mt-2 max-w-[280px] leading-relaxed font-light">
+                                        Your style reservation has been registered. Our curator team will connect shortly for scheduling.
+                                    </p>
+                                    <button 
+                                        onClick={() => setShowBookingModal(false)}
+                                        className="mt-6 border border-gray-200 hover:border-gray-400 px-6 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    const container = document.getElementById('tryon-react-root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<TryOnApp />);
+{% endraw %}
 </script>
 {% endblock %}

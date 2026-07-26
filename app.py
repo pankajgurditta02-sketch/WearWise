@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response, send_from_directory
 import os
 import sqlite3
 from werkzeug.utils import secure_filename
@@ -510,6 +510,14 @@ def delete_product(id):
     conn.close()
     return redirect(url_for('admin'))
 
+@app.route('/images/products/<path:filename>')
+def serve_products_images(filename):
+    return send_from_directory(os.path.join(app.root_path, 'images', 'products'), filename)
+
+@app.route('/images/tryon/<path:filename>')
+def serve_tryon_images(filename):
+    return send_from_directory(os.path.join(app.root_path, 'images', 'tryon'), filename)
+
 # Virtual Try-On progressive endpoints
 @app.route('/tryon')
 def tryon():
@@ -559,7 +567,8 @@ def tryon_upload():
                 "price": row['price'],
                 "sizes": row['available_sizes'],
                 "category": row['category'],
-                "image": row['image']
+                "image": f"/images/products/{img}",
+                "tryOn": f"/images/tryon/{img}"
             })
         
         return jsonify({
@@ -595,9 +604,11 @@ def tryon_generate(upload_id, product_id):
     try:
         success = generate_tryon(user_path, product_path, out_path)
         if success:
+            import time
+            time.sleep(0.8)
             return jsonify({
                 "success": True,
-                "image_url": url_for('static', filename=f"uploads/{out_filename}"),
+                "image_url": f"/static/uploads/{out_filename}",
                 "product_id": product_id
             })
         else:

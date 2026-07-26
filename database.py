@@ -91,16 +91,16 @@ def init_db():
         ('Evening Velvet Tuxedo', 'SUI-003', 'Exquisite designer velvet tuxedo set for evening events.', 'Women', 'Party', 2049, 'suit3.jpg', 5, 'S, M, L, XL'),
         
         # Formals for Women
-        ('Executive Tailored Pantsuit', 'FOR-001', 'Premium wool-blend structured double-breasted pantsuit for contemporary formal wear.', 'Women', 'Formals', 2499, 'formals_women_1.avif', 10, 'S, M, L, XL'),
-        ('Corporate Blazer Set', 'FOR-002', 'Elegant corporate blazer coupled with matching slim trousers for boardroom meetings.', 'Women', 'Formals', 2599, 'formals_women_2.avif', 8, 'M, L, XL, XXL'),
-        ('Signature Slim-Fit Suit', 'FOR-003', 'Sharp single-breasted blazer and trousers styled for a clean professional look.', 'Women', 'Formals', 2699, 'formals_women_3.avif', 12, 'S, M, L, XL'),
-        ('Executive Power Suit', 'FOR-004', 'Classic formal pantsuit featuring a tailored waist and notched lapels.', 'Women', 'Formals', 2799, 'formals_women_4.webp', 15, 'S, M, L, XL, XXL'),
-        ('Classic Formal Blazer Set', 'FOR-005', 'Chic corporate blazer set designed for professional styling.', 'Women', 'Formals', 2899, 'formals_women_5.avif', 10, 'S, M, L'),
-        ('Boardroom Classic Suit', 'FOR-006', 'Sophisticated formal blazer and trouser ensemble.', 'Women', 'Formals', 2999, 'formals_women_6.webp', 7, 'S, M, L, XL'),
-        ('Modern Power Suit Set', 'FOR-007', 'Empowering tailored pantsuit set with a streamlined silhouette.', 'Women', 'Formals', 3099, 'formals_women_7.jpg', 9, 'S, M, L, XL, XXL'),
-        ('Luxury Business Suit', 'FOR-008', 'Exquisite textured business suit for executive presentation.', 'Women', 'Formals', 3199, 'formals_women_8.jpg', 6, 'M, L, XL'),
-        ('Classic Business Blazer Set', 'FOR-009', 'Timeless structured trouser suit tailored for comfort and elegance.', 'Women', 'Formals', 3299, 'formals_women_9.webp', 11, 'S, M, L, XL'),
-        ('Designer Evening Suit Set', 'FOR-010', 'Luxury formal coordinates suitable for upscale corporate events.', 'Women', 'Formals', 3399, 'formals_women_10.jpg', 5, 'S, M, L, XL, XXL'),
+        ('Executive Tailored Pantsuit', 'FOR-001', 'Premium wool-blend structured double-breasted pantsuit for contemporary formal wear.', 'Women', 'Formals', 2499, 'formals_women_1.png', 10, 'S, M, L, XL'),
+        ('Corporate Blazer Set', 'FOR-002', 'Elegant corporate blazer coupled with matching slim trousers for boardroom meetings.', 'Women', 'Formals', 2599, 'formals_women_2.png', 8, 'M, L, XL, XXL'),
+        ('Signature Slim-Fit Suit', 'FOR-003', 'Sharp single-breasted blazer and trousers styled for a clean professional look.', 'Women', 'Formals', 2699, 'formals_women_3.png', 12, 'S, M, L, XL'),
+        ('Executive Power Suit', 'FOR-004', 'Classic formal pantsuit featuring a tailored waist and notched lapels.', 'Women', 'Formals', 2799, 'formals_women_4.avif', 15, 'S, M, L, XL, XXL'),
+        ('Classic Formal Blazer Set', 'FOR-005', 'Chic corporate blazer set designed for professional styling.', 'Women', 'Formals', 2899, 'formals_women_5.png', 10, 'S, M, L'),
+        ('Boardroom Classic Suit', 'FOR-006', 'Sophisticated formal blazer and trouser ensemble.', 'Women', 'Formals', 2999, 'formals_women_6.avif', 7, 'S, M, L, XL'),
+        ('Modern Power Suit Set', 'FOR-007', 'Empowering tailored pantsuit set with a streamlined silhouette.', 'Women', 'Formals', 3099, 'formals_women_7.avif', 9, 'S, M, L, XL, XXL'),
+        ('Luxury Business Suit', 'FOR-008', 'Exquisite textured business suit for executive presentation.', 'Women', 'Formals', 3199, 'formals_women_8.avif', 6, 'M, L, XL'),
+        ('Classic Business Blazer Set', 'FOR-009', 'Timeless structured trouser suit tailored for comfort and elegance.', 'Women', 'Formals', 3299, 'formals_women_9.avif', 11, 'S, M, L, XL'),
+        ('Designer Evening Suit Set', 'FOR-010', 'Luxury formal coordinates suitable for upscale corporate events.', 'Women', 'Formals', 3399, 'formals_women_10.avif', 5, 'S, M, L, XL, XXL'),
 
         # Wedding Outfits
         ('Wedding Outfit #1', 'WED-001', 'Premium elegant wedding designer wear coordinate set.', 'Women', 'Wedding', 2099, 'wedding_1.jpg', 10, 'S, M, L, XL, XXL'),
@@ -134,15 +134,14 @@ def init_db():
         ('Festive Outfit #13', 'FES-013', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 3299, 'festive_13.jpg', 10, 'S, M, L, XL, XXL'),
 
         # College Outfits
-        ('College Outfit #1', 'COL-001', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2099, 'college_1.png', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #2', 'COL-002', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2199, 'college_2.jfif', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #3', 'COL-003', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2299, 'college_3.jpg', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #4', 'COL-004', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2399, 'college_4.jpg', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #5', 'COL-005', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2499, 'college_5.jpg', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #6', 'COL-006', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2599, 'college_6.jpg', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #7', 'COL-007', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2699, 'college_7.jpg', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #8', 'COL-008', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2799, 'college_8.jpg', 10, 'S, M, L, XL, XXL'),
-        ('College Outfit #9', 'COL-009', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2899, 'college_9.png', 10, 'S, M, L, XL, XXL')
+        ('College Outfit #2', 'COL-002', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2100, 'college wear(2).jpg', 10, 'S, M, L, XL, XXL'),
+        ('College Outfit #4', 'COL-004', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2200, 'college wear(4).jpg', 10, 'S, M, L, XL, XXL'),
+        ('College Outfit #7', 'COL-007', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2350, 'college wear (7).jpg', 10, 'S, M, L, XL, XXL'),
+        ('College Outfit #9', 'COL-009', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2450, 'college wear(9).jfif', 10, 'S, M, L, XL, XXL'),
+        ('College Outfit #11', 'COL-011', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2550, 'college wear(11).jpg', 10, 'S, M, L, XL, XXL'),
+        ('College Outfit #12', 'COL-012', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2600, 'college wear(12).jpg', 10, 'S, M, L, XL, XXL'),
+        ('College Outfit #13', 'COL-013', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2650, 'college wear(13).jpg', 10, 'S, M, L, XL, XXL'),
+        ('College Outfit #14', 'COL-014', 'Premium elegant college designer wear coordinate set.', 'Women', 'College', 2700, 'college wear(14).png', 10, 'S, M, L, XL, XXL')
     ]
     cursor.executemany('''
         INSERT OR IGNORE INTO products (name, code, description, gender, category, price, image, stock_quantity, available_sizes)
