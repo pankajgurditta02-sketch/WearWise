@@ -128,8 +128,8 @@ def init_db():
         ('Festive Outfit #7', 'FES-007', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 2699, 'festive_7.jpg', 10, 'S, M, L, XL, XXL'),
         ('Festive Outfit #8', 'FES-008', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 2799, 'festive_8.jpg', 10, 'S, M, L, XL, XXL'),
         ('Festive Outfit #9', 'FES-009', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 2899, 'festive_9.jpg', 10, 'S, M, L, XL, XXL'),
-        ('Festive Outfit #10', 'FES-010', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 2999, 'festive_10.jpg', 10, 'S, M, L, XL, XXL'),
-        ('Festive Outfit #11', 'FES-011', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 3099, 'festive_11.png', 10, 'S, M, L, XL, XXL'),
+        ('Festive Outfit #10', 'FES-010', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 2999, 'festive(25).jpg', 10, 'S, M, L, XL, XXL'),
+        ('Festive Outfit #11', 'FES-011', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 3099, 'festive(26).png', 10, 'S, M, L, XL, XXL'),
         ('Festive Outfit #12', 'FES-012', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 3199, 'festive_12.png', 10, 'S, M, L, XL, XXL'),
         ('Festive Outfit #13', 'FES-013', 'Premium elegant festive designer wear coordinate set.', 'Women', 'Festive', 3299, 'festive_13.jpg', 10, 'S, M, L, XL, XXL'),
 

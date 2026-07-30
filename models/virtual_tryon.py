@@ -60,32 +60,36 @@ def generate_tryon(user_img_path, product_img_path, output_img_path):
         target_num = int(product_nums[-1])  # Get the product number as integer
         
         # Determine the folders to search
-        # Map filenames to categories
+        # Map filenames to categories paired with matching key for file prioritization
         search_dirs = []
         if 'formal' in product_filename.lower() or 'suit' in product_filename.lower():
-            search_dirs.append(os.path.join(project_root, 'static', 'try on formals'))
+            search_dirs.append((os.path.join(project_root, 'static', 'try on formals'), 'formal'))
         elif 'festive' in product_filename.lower() or 'wedding' in product_filename.lower():
-            search_dirs.append(os.path.join(project_root, 'static', 'try on festive'))
+            search_dirs.append((os.path.join(project_root, 'static', 'try on festive'), 'festive'))
         elif 'college' in product_filename.lower():
-            search_dirs.append(os.path.join(project_root, 'static', 'try on college'))
+            search_dirs.append((os.path.join(project_root, 'static', 'try on college'), 'college'))
             
         # Fallback to search all folders if no specific category matched
         all_dirs = [
-            os.path.join(project_root, 'static', 'try on formals'),
-            os.path.join(project_root, 'static', 'try on festive'),
-            os.path.join(project_root, 'static', 'try on college')
+            (os.path.join(project_root, 'static', 'try on formals'), 'formal'),
+            (os.path.join(project_root, 'static', 'try on festive'), 'festive'),
+            (os.path.join(project_root, 'static', 'try on college'), 'college')
         ]
-        for d in all_dirs:
-            if d not in search_dirs:
-                search_dirs.append(d)
+        for d, key in all_dirs:
+            if not any(x[0] == d for x in search_dirs):
+                search_dirs.append((d, key))
                 
         # Search for a matching file in the target directories
         matched_file_path = None
-        for tryon_dir in search_dirs:
+        for tryon_dir, key in search_dirs:
             if not os.path.exists(tryon_dir):
                 continue
                 
-            for filename in os.listdir(tryon_dir):
+            filenames = os.listdir(tryon_dir)
+            # Prioritize filenames containing the category key
+            filenames.sort(key=lambda x: (key not in x.lower(), len(x)))
+            
+            for filename in filenames:
                 file_nums = re.findall(r'\d+', filename)
                 if file_nums:
                     # Convert found numbers in filename to integers and compare

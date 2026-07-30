@@ -61,7 +61,7 @@ def analyze_body(image_path, gender="Women", skin_tone="Medium"):
             "eyeshadow": ["Metallic Gold", "Copper Shimmer", "Rich Emerald", "Warm Bronze"],
             "blush": ["Terracotta", "Deep Peach"],
             "jewelry_metals": ["Yellow Gold", "Polished Bronze", "Antiqued Brass"],
-            "jewelry_style": "Statement traditional gold chokers, oversized brass jhumkas, and temple jewelry pieces."
+            "jewelry_style": "Statement traditional gold chokers, oversized brass jhumkas, and temple jewellery pieces."
         }
     else: # Medium or Wheatish
         beauty_analysis = {

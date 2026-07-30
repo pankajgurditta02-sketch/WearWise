@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="dashboard" style="padding: 8rem 5% 4rem; max-width: 1200px; margin: 0 auto; color: var(--text-main);">
+<div class="dashboard" style="padding: 12rem 5% 4rem; max-width: 1200px; margin: 0 auto; color: var(--text-main);">
     
     <!-- Header -->
     <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 2rem; margin-bottom: 4rem;" class="reveal">
@@ -106,16 +106,16 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Jewelry Metals -->
-                    <h4 style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">Recommended Jewelry Metals</h4>
+                    <!-- Jewellery Metals -->
+                    <h4 style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">Recommended Jewellery Metals</h4>
                     <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem;">
                         {% for metal in session['analysis']['beauty_analysis']['jewelry_metals'] %}
                             <span style="background: rgba(212, 163, 150, 0.1); color: var(--accent-gold); border: 1px solid rgba(212, 163, 150, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">{{ metal }}</span>
                         {% endfor %}
                     </div>
 
-                    <!-- Jewelry Styling Advice -->
-                    <h4 style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.6rem;">Stylist Jewelry Advice</h4>
+                    <!-- Jewellery Styling Advice -->
+                    <h4 style="color: var(--text-muted); font-size: 0.8rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.6rem;">Stylist Jewellery Advice</h4>
                     <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin: 0;">{{ session['analysis']['beauty_analysis']['jewelry_style'] }}</p>
                 </div>
             </div>

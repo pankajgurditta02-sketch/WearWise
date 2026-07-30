@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, make_response, send_from_directory
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 import sqlite3
 from werkzeug.utils import secure_filename
 import uuid
@@ -9,6 +12,7 @@ from models.recommendation import get_style_recommendations
 from models.virtual_tryon import generate_tryon
 
 app = Flask(__name__)
+HF_TOKEN = os.getenv("HF_TOKEN")
 app.secret_key = 'wearwise_super_secret_key'
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
