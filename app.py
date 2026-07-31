@@ -527,6 +527,10 @@ def serve_tryon_images(filename):
 def tryon():
     return render_template('tryon.html')
 
+@app.route('/camera-studio')
+def camera_studio():
+    return render_template('camera_studio.html')
+
 @app.route('/api/tryon/upload', methods=['POST'])
 def tryon_upload():
     data = request.json

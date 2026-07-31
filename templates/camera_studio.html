@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Styling custom transitions and keyframes -->
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
+    @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    .animated-grad {
+        background: linear-gradient(-45deg, var(--accent-gold), #4F46E5, var(--accent-gold-hover), #1D4ED8);
+        background-size: 400% 400%;
+        animation: gradientBG 6s ease infinite;
+    }
+
+    @keyframes scan {
+        0% { top: 0%; }
+        50% { top: 100%; }
+        100% { top: 0%; }
+    }
+</style>
+
+<!-- Load Tailwind & React CDNs -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    luxury: {
+                        blue: 'var(--accent-gold)',
+                        blueHover: 'var(--accent-gold-hover)',
+                        dark: 'var(--text-main)',
+                        gray: 'var(--bg-secondary)',
+                        lightBorder: 'var(--glass-border)'
+                    }
+                },
+                fontFamily: {
+                    sans: ['Inter', 'sans-serif'],
+                    serif: ['Cormorant Garamond', 'serif']
+                }
+            }
+        }
+    }
+</script>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<div id="camera-react-root" style="padding-top: 9rem;" class="pb-16 bg-transparent"></div>
+
+<!-- React App Mounting -->
+<script type="text/babel">
+{% raw %}
+    const { useState, useEffect, useRef } = React;
+
+    const MOCK_PIXEL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    const DEFAULT_MODEL_PIC = "/static/try on formals/try on formal (4).png";
+
+    function CameraStudioApp() {
+        const [products, setProducts] = useState([]);
+        const [loadingProducts, setLoadingProducts] = useState(true);
+        const [activeCategory, setActiveCategory] = useState("Formals");
+
+        // Camera States
+        const [capturedSnapImage, setCapturedSnapImage] = useState(null);
+        const [isCameraActiveMiddle, setIsCameraActiveMiddle] = useState(false);
+        const [cameraTryonLoading, setCameraTryonLoading] = useState(false);
+
+        const videoRefMiddle = useRef(null);
+        const streamRefMiddle = useRef(null);
+
+        // Fetch products
+        useEffect(() => {
+            fetchCatalog();
+        }, []);
+
+        const fetchCatalog = async () => {
+            try {
+                const response = await fetch('/api/tryon/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: MOCK_PIXEL })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    setProducts(data.products || []);
+                }
+            } catch (err) {
+                console.error("Failed to load catalog", err);
+            } finally {
+                setLoadingProducts(false);
+            }
+        };
+
+        const startWebcamMiddle = async () => {
+            try {
+                setIsCameraActiveMiddle(true);
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: 640, height: 480 },
+                    audio: false
+                });
+                videoRefMiddle.current.srcObject = stream;
+                streamRefMiddle.current = stream;
+            } catch (err) {
+                console.error("Camera fail:", err);
+                alert("Could not access camera.");
+                setIsCameraActiveMiddle(false);
+            }
+        };
+
+        const stopWebcamMiddle = () => {
+            if (streamRefMiddle.current) {
+                streamRefMiddle.current.getTracks().forEach(track => track.stop());
+                streamRefMiddle.current = null;
+            }
+        };
+
+        const capturePhotoMiddle = () => {
+            if (!videoRefMiddle.current) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = videoRefMiddle.current.videoWidth || 640;
+            canvas.height = videoRefMiddle.current.videoHeight || 480;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoRefMiddle.current, 0, 0, canvas.width, canvas.height);
+            const base64Img = canvas.toDataURL('image/jpeg', 0.9);
+            setCapturedSnapImage(base64Img);
+            setIsCameraActiveMiddle(false);
+            stopWebcamMiddle();
+        };
+
+        const getProductDetails = (product) => {
+            if (!product || !product.image) return { num: 1, categorySingular: "Formal" };
+            const filename = product.image.split('/').pop();
+            const match = filename.match(/(\d+)/);
+            const num = match ? match[1] : product.id;
+            const cat = product.category;
+            const categorySingular = cat.endsWith('s') ? cat.slice(0, -1) : cat;
+            return { num, categorySingular };
+        };
+
+        const filteredProducts = products.filter(p => {
+            if (activeCategory === "All") return true;
+            return p.category.toLowerCase() === activeCategory.toLowerCase();
+        });
+
+        return (
+            <div className="max-w-6xl mx-auto px-6 relative select-none">
+                
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl font-serif text-gray-900 dark:text-gray-100 tracking-wide">Camera Feature Studio</h1>
+                    <p className="text-xs text-gray-400 mt-1 font-light">Interact with garments in real-time camera calibrations</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16 items-start">
+                    
+                    {/* CAMERA CONTROL COLUMN (Left/Center area) */}
+                    <div className="lg:col-span-7 glass rounded-3xl p-8 flex flex-col justify-between min-h-[520px] relative border border-gray-100 dark:border-gray-800 shadow-xl">
+                        {cameraTryonLoading ? (
+                            /* Beautiful Infinite Loader Animation */
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/90 via-slate-900/95 to-purple-950/90 backdrop-blur-md flex flex-col justify-center items-center p-6 z-20 rounded-3xl">
+                                <div className="absolute inset-x-0 h-0.5 bg-cyan-400 shadow-[0_0_15px_#22d3ee] animate-[scan_2.5s_ease-in-out_infinite] z-30"></div>
+                                
+                                <div className="w-full max-w-xs glass rounded-2xl p-6 flex flex-col items-center border border-cyan-500/30">
+                                    <div className="relative w-16 h-16 mb-4 flex items-center justify-center">
+                                        <div className="absolute inset-0 border-2 border-dashed border-cyan-400 rounded-full animate-[spin_10s_linear_infinite]"></div>
+                                        <div className="absolute w-12 h-12 border-2 border-purple-500 border-t-transparent rounded-full animate-[spin_2s_linear_infinite]"></div>
+                                        <div className="absolute w-8 h-8 bg-cyan-500/20 rounded-full animate-ping"></div>
+                                    </div>
+                                    <span className="text-[11px] font-bold uppercase tracking-widest text-cyan-400 mb-2 block animate-pulse">
+                                        Synthesizing Fitting...
+                                    </span>
+                                    <span className="text-[9px] font-semibold text-gray-400 tracking-widest text-center leading-relaxed">
+                                        PROCESSING BIOMETRICS<br/>
+                                        <span className="text-purple-400">ESTIMATING FITTING MODEL (∞)</span>
+                                    </span>
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); setCameraTryonLoading(false); }} 
+                                        className="mt-6 bg-white/10 hover:bg-white/20 text-white text-[9px] uppercase tracking-wider font-bold px-4 py-2 rounded-full border border-white/25 transition-all active:scale-95 shadow-md"
+                                    >
+                                        Cancel Loader
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        <div>
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="text-xs uppercase tracking-widest text-gray-400 font-bold">Studio Camera Stream</span>
+                                <span className="text-[10px] text-luxury-blue uppercase tracking-wider font-bold animate-pulse">Live feed</span>
+                            </div>
+
+                            {/* Camera Area */}
+                            <div 
+                                onClick={() => {
+                                    if (!isCameraActiveMiddle) {
+                                        startWebcamMiddle();
+                                    }
+                                }}
+                                className={`flex justify-center items-center relative aspect-[4/3] bg-black/10 dark:bg-black/40 rounded-2xl overflow-hidden border border-dashed border-gray-500/30 dark:border-gray-800/60 mb-6 ${!isCameraActiveMiddle ? 'cursor-pointer hover:border-luxury-blue/50 transition-all' : ''}`}
+                            >
+                                {isCameraActiveMiddle ? (
+                                    <div className="absolute inset-0 flex flex-col justify-end items-center" onClick={(e) => e.stopPropagation()}>
+                                        <video ref={videoRefMiddle} autoPlay playsInline className="w-full h-full object-cover absolute inset-0" />
+                                        <div className="flex gap-3 mb-4 z-10">
+                                            <button onClick={capturePhotoMiddle} className="bg-luxury-blue text-white text-[11px] uppercase font-bold tracking-wider px-5 py-2.5 rounded-full shadow-lg active:scale-95 transition-all">Capture Snap</button>
+                                            <button onClick={() => { setIsCameraActiveMiddle(false); stopWebcamMiddle(); }} className="bg-black/60 text-white text-[11px] uppercase font-bold tracking-wider px-5 py-2.5 rounded-full active:scale-95 transition-all">Cancel</button>
+                                        </div>
+                                    </div>
+                                ) : capturedSnapImage ? (
+                                    <img src={capturedSnapImage} alt="Captured camera snap" className="w-full h-full object-contain animate-fade-in" />
+                                ) : (
+                                    <div className="text-center p-8">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-10 h-10 mx-auto mb-4 text-luxury-blue animate-pulse">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                        </svg>
+                                        <h4 className="text-[12px] font-bold uppercase tracking-wider text-gray-900 dark:text-gray-100">
+                                            OPEN WEB-CAMERA
+                                        </h4>
+                                        <p className="text-[10px] text-gray-400 mt-2 max-w-[240px] leading-relaxed mx-auto">
+                                            Click here or on the button below to turn on the camera and grab your profile snap.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            {!isCameraActiveMiddle && (
+                                <button 
+                                    onClick={startWebcamMiddle} 
+                                    className="w-full bg-white dark:bg-gray-800 border border-gray-250 dark:border-gray-700 text-gray-700 dark:text-gray-300 py-3.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all hover:bg-gray-50 dark:hover:bg-gray-900 active:scale-95 flex items-center justify-center gap-1.5 shadow-md"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor" className="w-3.5 h-3.5 text-luxury-blue">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                                    </svg>
+                                    ACTIVATE WEB CAMERA
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* OUTFIT SELECTION CATALOG COLUMN (Right area) */}
+                    <div className="lg:col-span-5 glass rounded-3xl p-8 border border-gray-100 dark:border-gray-800 shadow-xl min-h-[520px] flex flex-col justify-between">
+                        <div>
+                            <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-gray-800 mb-6">
+                                <h3 className="text-lg font-serif text-gray-900 dark:text-gray-100">Select Outfit</h3>
+                                
+                                <div className="flex gap-1 border border-gray-100 dark:border-gray-800 p-0.5 rounded-lg bg-gray-50 dark:bg-gray-950 text-[8.5px]">
+                                    {["Formals", "Festive", "College"].map(cat => (
+                                        <button 
+                                            key={cat}
+                                            onClick={() => setActiveCategory(cat)}
+                                            className={`px-3 py-1.5 rounded-md font-bold tracking-wider uppercase transition-all ${activeCategory === cat ? 'bg-white dark:bg-gray-800 text-luxury-blue shadow-sm' : 'text-gray-400'}`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Catalog duplicate grid */}
+                            {loadingProducts ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    {[1, 2, 3, 4].map(idx => (
+                                        <div key={idx} className="animate-pulse bg-gray-50 dark:bg-gray-900 h-40 rounded-xl"></div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4 overflow-y-auto max-h-[380px] pr-1">
+                                    {filteredProducts.map(product => {
+                                        const { num, categorySingular } = getProductDetails(product);
+                                        return (
+                                            <div 
+                                                key={`studio-outfit-${product.id}`}
+                                                onClick={() => setCameraTryonLoading(true)}
+                                                className="group relative rounded-xl overflow-hidden border border-gray-200/10 cursor-pointer bg-black/10 hover:border-luxury-blue/50 transition-all aspect-[3/4] shadow-md"
+                                            >
+                                                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex flex-col justify-end p-3">
+                                                    <span className="text-[10px] font-bold text-white leading-tight">{categorySingular} ({num})</span>
+                                                    <span className="text-[8px] text-gray-300 font-light mt-0.5">{product.name}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="pt-6 border-t border-gray-100 dark:border-gray-800 mt-6 text-center">
+                            <a 
+                                href="/tryon" 
+                                className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-luxury-blue transition-colors font-medium"
+                            >
+                                ➔ Back to Virtual Try-On Canvas
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    const container = document.getElementById('camera-react-root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<CameraStudioApp />);
+{% endraw %}
+</script>
+{% endblock %}
